@@ -1,4 +1,5 @@
 from extract.extractor import extract_csv
+from validate.validator import validate_customers
 def main():
     data_path = "../data/raw/"
 
@@ -15,6 +16,8 @@ def main():
     print(f"Accounts:      {len(accounts):,}")
     print(f"Merchants:     {len(merchants):,}")
     print(f"Transactions:  {len(transactions):,}")
+
+    validate_customers(customers)
 
 
 if __name__ == "__main__":
