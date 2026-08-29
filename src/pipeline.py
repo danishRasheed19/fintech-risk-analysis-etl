@@ -11,6 +11,7 @@ def main():
     print("\nExtraction completed successfully.")
 
     print("\nDataset sizes:")
+    
 
     print(f"Customers:     {len(customers):,}")
     print(f"Accounts:      {len(accounts):,}")

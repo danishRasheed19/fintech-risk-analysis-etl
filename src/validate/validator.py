@@ -1,6 +1,7 @@
 import pandas as pd
 import re
 from datetime import datetime
+from validate.validation_exceptions import ValidationError
 SUPPORTED_COUNTRIES = {
     "FR", "DE", "ES", "IT", "NL",
     "BE", "GB", "US", "CA", "AU",
@@ -79,6 +80,18 @@ VALID_TRANSACTION_STATUSES = [
     "REVERSED"
 ]
 
+def validate_input(df,name):
+    if df is None:
+        raise ValidationError(f"{name} data is None")
+
+    if not isinstance(df, pd.DataFrame):
+        raise ValidationError(
+            f"{name} must be a pandas DataFrame"
+        )
+    if df.empty:
+        raise ValidationError(
+            f"{name} DataFrame is empty"
+        )
 def validate_schema(df,expected_cols,expected_dtypes):
     missing_cols =set(expected_cols) - set(df.columns)
     unexpected_cols = set(df.columns) - set(expected_cols)
@@ -90,7 +103,8 @@ def validate_dtypes(df, expected_dtypes):
     invalid_dtypes = {}
 
     for column, expected_type in expected_dtypes.items():
-
+        if column not in df.columns:
+            continue
         actual_type = str(df[column].dtype)
 
         if expected_type == "string":
@@ -415,7 +429,7 @@ def produce_report(validation_results):
     print("=" * 60)
 
 def validate_customers(customers):
-
+    validate_input(customers,"Customers")
     expected_cols = [
         "customer_id",
         "first_name",
@@ -571,6 +585,7 @@ def validate_customers(customers):
     produce_report(validation_results)
 
 def validate_merchants(merchants):
+    validate_input(merchants,"merchants")
     expected_cols = [
     "merchant_id",
     "merchant_name",
@@ -710,6 +725,7 @@ def validate_merchants(merchants):
     produce_report(validation_results)
 
 def validate_accounts(accounts):
+    validate_input(accounts,"accounts")
     expected_cols = [
     "account_id",
     "customer_id",
@@ -933,6 +949,7 @@ def validate_transaction_quality(transactions):
     return quality_issues
 
 def validate_transactions(transactions):
+    validate_input(transactions,"transactions")
     expected_cols = [
     "transaction_id",
     "account_id",
@@ -1107,8 +1124,17 @@ def validate_transactions(transactions):
 def validate_data(customers,accounts,merchants,transactions):
     print("Validating Data")
 
-    validate_customers(customers)
-    validate_merchants(merchants)
-    validate_accounts(accounts)
-    validate_transactions(transactions)
+    datasets = [
+        (customers,validate_customers,"Customers"),
+        (accounts,validate_accounts,"Accounts"),
+        (merchants,validate_merchants,"Merchants"),
+        (transactions,validate_transactions,"Transactions")
+    ]
+    for df, validator,name in datasets:
+        try:
+            validator(df)
+        except ValidationError as e:
+            print(f"\n{name.upper()} VALIDATION ERROR: {e}")
+        except Exception as e:
+            print(f"\n{name.upper()} UNEXPECTED ERROR: {e}")
 
