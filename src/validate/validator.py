@@ -2,6 +2,7 @@ import pandas as pd
 import re
 from datetime import datetime
 from validate.validation_exceptions import ValidationError
+from reporting.html_report import produce_html_report
 SUPPORTED_COUNTRIES = {
     "FR", "DE", "ES", "IT", "NL",
     "BE", "GB", "US", "CA", "AU",
@@ -583,6 +584,7 @@ def validate_customers(customers):
     }
 
     produce_report(validation_results)
+    produce_html_report(validation_results)
 
 def validate_merchants(merchants):
     validate_input(merchants,"merchants")
@@ -723,6 +725,8 @@ def validate_merchants(merchants):
     }
     
     produce_report(validation_results)
+    produce_html_report(validation_results)
+
 
 def validate_accounts(accounts):
     validate_input(accounts,"accounts")
@@ -879,6 +883,8 @@ def validate_accounts(accounts):
     }
         
     produce_report(validation_results)
+    produce_html_report(validation_results)
+
 
 def validate_transaction_quality(transactions):
 
@@ -1120,6 +1126,8 @@ def validate_transactions(transactions):
     }
         
     produce_report(validation_results)
+    produce_html_report(validation_results)
+
 
 def validate_data(customers,accounts,merchants,transactions):
     print("Validating Data")
