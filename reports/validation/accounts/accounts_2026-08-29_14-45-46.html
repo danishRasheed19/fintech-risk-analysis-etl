@@ -1,0 +1,533 @@
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>accounts Data Quality Report</title>
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f6f8;
+            color: #1f2937;
+            margin: 0;
+            padding: 40px;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: auto;
+        }
+
+        .header {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        h1 {
+            margin: 0 0 10px 0;
+            font-size: 30px;
+        }
+
+        h2 {
+            margin-top: 0;
+        }
+
+        .metadata {
+            color: #6b7280;
+            line-height: 1.8;
+        }
+
+        .summary {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .card {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .card-title {
+            color: #6b7280;
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+
+        .card-value {
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .status-card {
+            text-align: center;
+        }
+
+        .status-card .card-value {
+            font-size: 24px;
+        }
+
+        .pass {
+            color: #15803d;
+        }
+
+        .fail {
+            color: #dc2626;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .badge.pass {
+            background: #dcfce7;
+            color: #15803d;
+        }
+
+        .badge.fail {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+
+        .section {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        th {
+            background: #f3f4f6;
+            text-align: left;
+            padding: 12px;
+            font-size: 14px;
+        }
+
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .two-column {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .issue-box {
+            background: #f9fafb;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+
+        .footer {
+            text-align: center;
+            color: #6b7280;
+            margin-top: 30px;
+            font-size: 13px;
+        }
+
+        @media (max-width: 800px) {
+            .summary {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .two-column {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 500px) {
+            body {
+                padding: 15px;
+            }
+
+            .summary {
+                grid-template-columns: 1fr;
+            }
+        }
+
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <!-- Header -->
+
+    <div class="header">
+
+        <h1>FinTech ETL — Data Quality Report</h1>
+
+        <div class="metadata">
+            <strong>Dataset:</strong> accounts.csv<br>
+            <strong>Generated:</strong>
+            2026-08-29 14:45:46<br>
+            <strong>Primary Key:</strong> account_id
+        </div>
+
+    </div>
+
+
+    <!-- Summary -->
+
+    <div class="summary">
+
+        <div class="card status-card">
+            <div class="card-title">OVERALL STATUS</div>
+            <div class="card-value fail">
+                FAIL
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">TOTAL RECORDS</div>
+            <div class="card-value">
+                12,000
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">VALID RECORDS</div>
+            <div class="card-value pass">
+                11,997
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">INVALID RECORDS</div>
+            <div class="card-value fail">
+                3
+            </div>
+        </div>
+
+    </div>
+
+
+    <!-- Validation Summary -->
+
+    <div class="section">
+
+        <h2>Validation Summary</h2>
+
+        <table>
+
+            <thead>
+                <tr>
+                    <th>Validation Layer</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+
+            <tbody>
+
+                <tr>
+                    <td>Schema Validation</td>
+                    <td><span class="badge pass">PASS</span></td>
+                </tr>
+
+                <tr>
+                    <td>Structural Validation</td>
+                    <td><span class="badge pass">PASS</span></td>
+                </tr>
+
+                <tr>
+                    <td>Business Rule Validation</td>
+                    <td><span class="badge fail">FAIL</span></td>
+                </tr>
+
+                <tr>
+                    <td>Data Quality Validation</td>
+                    <td><span class="badge fail">FAIL</span></td>
+                </tr>
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+
+    <!-- Schema Validation -->
+
+    <div class="section">
+
+        <h2>1. Schema Validation</h2>
+
+        <p>
+            Missing Columns:
+            <strong>None</strong>
+        </p>
+
+        <p>
+            Unexpected Columns:
+            <strong>None</strong>
+        </p>
+
+        <table>
+
+            <thead>
+                <tr>
+                    <th>Column</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                
+                <tr>
+                    <td>account_id</td>
+                    <td><span class="badge pass">PASS</span></td>
+                </tr>
+            
+                <tr>
+                    <td>customer_id</td>
+                    <td><span class="badge pass">PASS</span></td>
+                </tr>
+            
+                <tr>
+                    <td>account_type</td>
+                    <td><span class="badge pass">PASS</span></td>
+                </tr>
+            
+                <tr>
+                    <td>currency</td>
+                    <td><span class="badge pass">PASS</span></td>
+                </tr>
+            
+                <tr>
+                    <td>balance</td>
+                    <td><span class="badge pass">PASS</span></td>
+                </tr>
+            
+                <tr>
+                    <td>created_at</td>
+                    <td><span class="badge pass">PASS</span></td>
+                </tr>
+            
+                <tr>
+                    <td>status</td>
+                    <td><span class="badge pass">PASS</span></td>
+                </tr>
+            
+            </tbody>
+
+        </table>
+
+    </div>
+
+
+    <!-- Structural Validation -->
+
+    <div class="section">
+
+        <h2>2. Structural Validation</h2>
+
+        <div class="two-column">
+
+            <div>
+
+                <h3>Required Fields</h3>
+
+                <table>
+
+                    <thead>
+                        <tr>
+                            <th>Field</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        
+            <tr>
+                <td>account_id</td>
+                <td><span class="badge pass">PASS</span></td>
+            </tr>
+        
+            <tr>
+                <td>customer_id</td>
+                <td><span class="badge pass">PASS</span></td>
+            </tr>
+        
+            <tr>
+                <td>account_type</td>
+                <td><span class="badge pass">PASS</span></td>
+            </tr>
+        
+            <tr>
+                <td>currency</td>
+                <td><span class="badge pass">PASS</span></td>
+            </tr>
+        
+            <tr>
+                <td>balance</td>
+                <td><span class="badge pass">PASS</span></td>
+            </tr>
+        
+            <tr>
+                <td>created_at</td>
+                <td><span class="badge pass">PASS</span></td>
+            </tr>
+        
+            <tr>
+                <td>status</td>
+                <td><span class="badge pass">PASS</span></td>
+            </tr>
+        
+                    </tbody>
+
+                </table>
+
+            </div>
+
+            <div>
+
+                <h3>Primary Key</h3>
+
+                <div class="issue-box">
+                    Missing IDs:
+                    <strong>0</strong>
+                </div>
+
+                <div class="issue-box">
+                    Duplicate IDs:
+                    <strong>0</strong>
+                </div>
+
+                <div class="issue-box">
+                    Invalid Records:
+                    <strong>0</strong>
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- Business Rules -->
+
+    <div class="section">
+
+        <h2>3. Business Rule Validation</h2>
+
+        <table>
+
+            <thead>
+                <tr>
+                    <th>Rule</th>
+                    <th>Invalid Records</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                
+                <tr>
+                    <td>INVALID ACCOUNT TYPES</td>
+                    <td>0</td>
+                </tr>
+            
+                <tr>
+                    <td>INVALID ACCOUNT STATUSES</td>
+                    <td>1</td>
+                </tr>
+            
+                <tr>
+                    <td>INVALID BALANCES</td>
+                    <td>0</td>
+                </tr>
+            
+                <tr>
+                    <td>INVALID CURRENCIES</td>
+                    <td>1</td>
+                </tr>
+            
+                <tr>
+                    <td>INVALID DATES</td>
+                    <td>0</td>
+                </tr>
+            
+            </tbody>
+
+        </table>
+
+    </div>
+
+
+    <!-- Data Quality -->
+
+    <div class="section">
+
+        <h2>4. Data Quality Validation</h2>
+
+        <table>
+
+            <thead>
+                <tr>
+                    <th>Issue</th>
+                    <th>Records</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                
+                <tr>
+                    <td>INVALID ACCOUNT ID FORMAT</td>
+                    <td>2</td>
+                </tr>
+            
+                <tr>
+                    <td>INVALID CUSTOMER ID FORMAT</td>
+                    <td>1</td>
+                </tr>
+            
+            </tbody>
+
+        </table>
+
+    </div>
+
+
+    <!-- Footer -->
+
+    <div class="footer">
+
+        FinTech ETL Data Quality Pipeline<br>
+        Report generated automatically
+
+    </div>
+
+</div>
+
+</body>
+</html>
