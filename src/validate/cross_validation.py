@@ -1,28 +1,5 @@
 import pandas as pd
-SUPPORTED_COUNTRIES = [
-    "FR", "DE", "ES", "IT", "NL",
-    "BE", "GB", "US", "CA", "AU",
-    "JP", "SG", "AE", "IN", "PK"
-]
-
-SUPPORTED_CURRENCIES = {
-    "FR": "EUR",
-    "DE": "EUR",
-    "ES": "EUR",
-    "IT": "EUR",
-    "NL": "EUR",
-    "BE": "EUR",
-    "GB": "GBP",
-    "US": "USD",
-    "CA": "CAD",
-    "AU": "AUD",
-    "JP": "JPY",
-    "SG": "SGD",
-    "AE": "AED",
-    "IN": "INR",
-    "PK": "PKR"
-}
-
+from reporting.html_report import produce_cross_validation_report
 def validate_accounts_of_customers(accounts,customers):
     """
         Validate that every account belongs to an existing customer.
@@ -54,34 +31,43 @@ def validate_transaction_merchants(merchants, transactions):
 
     return { "name": "TRANSACTION_MERCHANT_RELATIONSHIP", "invalid_records": invalid_transactions, "invalid_count": len(invalid_transactions), "status": len(invalid_transactions) == 0 }
 
-def validate_date(transactions,accounts):
-    transaction_dates = pd.to_datetime(
-        transactions["transaction_timestamp"],
+def validate_date(transactions, accounts):
+
+    transactions_for_merge = transactions.copy()
+
+    transactions_for_merge["transaction_timestamp"] = pd.to_datetime(
+        transactions_for_merge["transaction_timestamp"],
         errors="coerce"
     )
 
-    account_dates = pd.to_datetime(
-        accounts["created_at"],
+    accounts_for_merge = accounts[["account_id", "created_at"]].copy()
+
+    accounts_for_merge["created_at"] = pd.to_datetime(
+        accounts_for_merge["created_at"],
         errors="coerce"
     )
 
-    accounts_for_merge = accounts[["account_id"]].copy()
-    accounts_for_merge["created_at"] = account_dates
-
-    merged = transactions.merge(
+    merged = transactions_for_merge.merge(
         accounts_for_merge,
         on="account_id",
         how="left"
     )
 
     invalid_transactions = merged[
-        transaction_dates.loc[merged.index]
-        < merged["created_at"]
+        merged["transaction_timestamp"] < merged["created_at"]
     ]
-    return { "name": "TRANSACTION_DATE", "invalid_records": invalid_transactions, "invalid_count": len(invalid_transactions), "status": len(invalid_transactions) == 0 }
+
+    return {
+        "name": "TRANSACTION_DATE",
+        "invalid_records": invalid_transactions,
+        "invalid_count": len(invalid_transactions),
+        "status": len(invalid_transactions) == 0
+    }
 
     
 def validate_cross_dataset(customers, accounts, merchants, transactions):
+    
+    print("VALIDATING CROSS DATASET")
 
     results = {}
 
@@ -93,5 +79,8 @@ def validate_cross_dataset(customers, accounts, merchants, transactions):
     
     results["transaction_date"] =validate_date(transactions,accounts)
 
-    return results
+    produce_cross_validation_report(results)
+
+
+
 

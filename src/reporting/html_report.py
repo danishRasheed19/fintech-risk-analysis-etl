@@ -1,6 +1,6 @@
 from datetime import datetime
 from pathlib import Path
-
+from html import escape
 
 def produce_html_report(validation_results):
     """
@@ -620,4 +620,558 @@ def produce_html_report(validation_results):
     )
 
     print(f"HTML report generated: {output_path}")
+
+
+def produce_cross_validation_report(validation_results):
+    """
+    Generate an HTML report for cross-dataset validation results.
+
+    Parameters
+    ----------
+    validation_results : dict
+        Results returned by validate_cross_dataset().
+    """
+
+    # ---------------------------------------------------------
+    # Report information
+    # ---------------------------------------------------------
+
+    generated_at = datetime.now()
+
+    filename_timestamp = generated_at.strftime(
+        "%Y-%m-%d_%H-%M-%S"
+    )
+
+    display_timestamp = generated_at.strftime(
+        "%Y-%m-%d %H:%M:%S"
+    )
+
+    output_dir = Path("../reports/validation/cross_validation")
+
+    output_dir.mkdir(
+        parents=True,
+        exist_ok=True
+    )
+
+    output_path = (
+        output_dir
+        / f"cross_validation_{filename_timestamp}.html"
+    )
+
+    # ---------------------------------------------------------
+    # Overall status
+    # ---------------------------------------------------------
+
+    total_checks = len(validation_results)
+
+    passed_checks = sum(
+        result["status"]
+        for result in validation_results.values()
+    )
+
+    failed_checks = total_checks - passed_checks
+
+    overall_status = failed_checks == 0
+
+    # ---------------------------------------------------------
+    # Helper functions
+    # ---------------------------------------------------------
+
+    def status_badge(status):
+        if status:
+            return '<span class="badge pass">PASS</span>'
+
+        return '<span class="badge fail">FAIL</span>'
+
+    # ---------------------------------------------------------
+    # Validation summary
+    # ---------------------------------------------------------
+
+    summary_rows = ""
+
+    for result in validation_results.values():
+
+        name = escape(
+            result["name"].replace("_", " ")
+        )
+
+        count = result["invalid_count"]
+
+        summary_rows += f"""
+            <tr>
+                <td>{name}</td>
+                <td>{count:,}</td>
+                <td>{status_badge(result["status"])}</td>
+            </tr>
+        """
+
+    # ---------------------------------------------------------
+    # Detailed validation sections
+    # ---------------------------------------------------------
+
+    detail_sections = ""
+
+    for result in validation_results.values():
+
+        name = escape(
+            result["name"].replace("_", " ")
+        )
+
+        invalid_count = result["invalid_count"]
+        status = result["status"]
+        invalid_records = result["invalid_records"]
+
+        if invalid_count == 0:
+
+            details = """
+                <div class="success-message">
+                    No invalid records found.
+                </div>
+            """
+
+        else:
+
+            # Convert invalid records to an HTML table.
+            table_html = invalid_records.to_html(
+                index=False,
+                classes="data-table",
+                border=0
+            )
+
+            details = f"""
+                <div class="error-message">
+                    <strong>{invalid_count:,}</strong>
+                    invalid record(s) found.
+                </div>
+
+                <div class="table-container">
+                    {table_html}
+                </div>
+            """
+
+        detail_sections += f"""
+            <div class="section">
+
+                <div class="section-header">
+
+                    <h2>{name}</h2>
+
+                    {status_badge(status)}
+
+                </div>
+
+                {details}
+
+            </div>
+        """
+
+    # ---------------------------------------------------------
+    # Overall status
+    # ---------------------------------------------------------
+
+    overall_text = "PASS" if overall_status else "FAIL"
+    overall_class = "pass" if overall_status else "fail"
+
+    # ---------------------------------------------------------
+    # HTML
+    # ---------------------------------------------------------
+
+    html = f"""
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>Cross-Dataset Validation Report</title>
+
+    <style>
+
+        * {{
+            box-sizing: border-box;
+        }}
+
+        body {{
+            margin: 0;
+            padding: 40px;
+
+            font-family:
+                Arial,
+                Helvetica,
+                sans-serif;
+
+            background-color: #f4f6f8;
+            color: #1f2937;
+        }}
+
+        .container {{
+            max-width: 1200px;
+            margin: auto;
+        }}
+
+        .header {{
+            background: white;
+            padding: 30px;
+
+            border-radius: 12px;
+
+            margin-bottom: 25px;
+
+            box-shadow:
+                0 2px 8px
+                rgba(0, 0, 0, 0.08);
+        }}
+
+        h1 {{
+            margin: 0 0 10px 0;
+            font-size: 30px;
+        }}
+
+        h2 {{
+            margin: 0;
+            font-size: 20px;
+        }}
+
+        .metadata {{
+            color: #6b7280;
+            line-height: 1.8;
+        }}
+
+        .summary {{
+            display: grid;
+
+            grid-template-columns:
+                repeat(4, 1fr);
+
+            gap: 15px;
+
+            margin-bottom: 25px;
+        }}
+
+        .card {{
+            background: white;
+
+            padding: 25px;
+
+            border-radius: 12px;
+
+            box-shadow:
+                0 2px 8px
+                rgba(0, 0, 0, 0.08);
+        }}
+
+        .card-title {{
+            color: #6b7280;
+            font-size: 14px;
+
+            margin-bottom: 8px;
+        }}
+
+        .card-value {{
+            font-size: 28px;
+            font-weight: bold;
+        }}
+
+        .pass {{
+            color: #15803d;
+        }}
+
+        .fail {{
+            color: #dc2626;
+        }}
+
+        .badge {{
+            display: inline-block;
+
+            padding: 6px 12px;
+
+            border-radius: 20px;
+
+            font-size: 12px;
+
+            font-weight: bold;
+        }}
+
+        .badge.pass {{
+            background-color: #dcfce7;
+            color: #15803d;
+        }}
+
+        .badge.fail {{
+            background-color: #fee2e2;
+            color: #dc2626;
+        }}
+
+        .section {{
+            background: white;
+
+            padding: 25px;
+
+            border-radius: 12px;
+
+            margin-bottom: 25px;
+
+            box-shadow:
+                0 2px 8px
+                rgba(0, 0, 0, 0.08);
+        }}
+
+        .section-header {{
+            display: flex;
+
+            justify-content:
+                space-between;
+
+            align-items: center;
+
+            margin-bottom: 20px;
+        }}
+
+        table {{
+            width: 100%;
+
+            border-collapse: collapse;
+        }}
+
+        th {{
+            background-color: #f3f4f6;
+
+            text-align: left;
+
+            padding: 12px;
+
+            font-size: 14px;
+        }}
+
+        td {{
+            padding: 12px;
+
+            border-bottom:
+                1px solid #e5e7eb;
+        }}
+
+        .data-table {{
+            font-size: 13px;
+        }}
+
+        .table-container {{
+            overflow-x: auto;
+
+            margin-top: 20px;
+        }}
+
+        .success-message {{
+            padding: 15px;
+
+            border-radius: 8px;
+
+            background-color: #f0fdf4;
+
+            color: #15803d;
+        }}
+
+        .error-message {{
+            padding: 15px;
+
+            border-radius: 8px;
+
+            background-color: #fef2f2;
+
+            color: #b91c1c;
+        }}
+
+        .footer {{
+            text-align: center;
+
+            color: #6b7280;
+
+            margin-top: 30px;
+
+            font-size: 13px;
+        }}
+
+        @media (max-width: 800px) {{
+
+            .summary {{
+                grid-template-columns:
+                    1fr 1fr;
+            }}
+
+        }}
+
+        @media (max-width: 500px) {{
+
+            body {{
+                padding: 15px;
+            }}
+
+            .summary {{
+                grid-template-columns:
+                    1fr;
+            }}
+
+        }}
+
+    </style>
+
+</head>
+
+
+<body>
+
+<div class="container">
+
+
+    <!-- Header -->
+
+    <div class="header">
+
+        <h1>
+            FinTech ETL — Cross-Dataset Validation
+        </h1>
+
+        <div class="metadata">
+
+            <strong>Report Type:</strong>
+            Cross-Dataset Validation<br>
+
+            <strong>Generated:</strong>
+            {display_timestamp}
+
+        </div>
+
+    </div>
+
+
+    <!-- Summary Cards -->
+
+    <div class="summary">
+
+
+        <div class="card">
+
+            <div class="card-title">
+                OVERALL STATUS
+            </div>
+
+            <div class="card-value {overall_class}">
+                {overall_text}
+            </div>
+
+        </div>
+
+
+        <div class="card">
+
+            <div class="card-title">
+                TOTAL CHECKS
+            </div>
+
+            <div class="card-value">
+                {total_checks}
+            </div>
+
+        </div>
+
+
+        <div class="card">
+
+            <div class="card-title">
+                PASSED
+            </div>
+
+            <div class="card-value pass">
+                {passed_checks}
+            </div>
+
+        </div>
+
+
+        <div class="card">
+
+            <div class="card-title">
+                FAILED
+            </div>
+
+            <div class="card-value fail">
+                {failed_checks}
+            </div>
+
+        </div>
+
+
+    </div>
+
+
+    <!-- Validation Summary -->
+
+    <div class="section">
+
+        <h2>Validation Summary</h2>
+
+        <table>
+
+            <thead>
+
+                <tr>
+                    <th>Validation Check</th>
+                    <th>Invalid Records</th>
+                    <th>Status</th>
+                </tr>
+
+            </thead>
+
+            <tbody>
+
+                {summary_rows}
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+
+    <!-- Detailed Results -->
+
+    {detail_sections}
+
+
+    <!-- Footer -->
+
+    <div class="footer">
+
+        FinTech ETL Data Quality Pipeline<br>
+        Cross-dataset validation report generated automatically
+
+    </div>
+
+
+</div>
+
+</body>
+
+</html>
+"""
+
+    # ---------------------------------------------------------
+    # Write report
+    # ---------------------------------------------------------
+
+    output_path.write_text(
+        html,
+        encoding="utf-8"
+    )
+
+    print(
+        f"Cross-validation HTML report generated: "
+        f"{output_path}"
+    )
+
+
 

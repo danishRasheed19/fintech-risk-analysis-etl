@@ -1,5 +1,6 @@
 from extract.extractor import extract_csv
 from validate.validator import validate_data
+from validate.cross_validation import validate_cross_dataset
 def main():
     data_path = "../data/raw/"
 
@@ -19,6 +20,7 @@ def main():
     print(f"Transactions:  {len(transactions):,}")
 
     validate_data(customers,accounts,merchants,transactions)
+    validate_cross_dataset(customers,accounts,merchants,transactions)
 
 
 if __name__ == "__main__":
