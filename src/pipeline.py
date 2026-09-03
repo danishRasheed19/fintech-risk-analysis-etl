@@ -1,7 +1,8 @@
 from extract.extractor import extract_csv
 from validate.validator import validate_data
 from validate.cross_validation import validate_cross_dataset
-from filter.filter import combine_validation_results
+from filter.filter import filter_data
+from transform.transformation import transform_data
 def main():
     data_path = "../data/raw/"
 
@@ -22,8 +23,8 @@ def main():
 
     validation_results = validate_data(customers,accounts,merchants,transactions, False,False)
     cross_validation_results = validate_cross_dataset(customers,accounts,merchants,transactions, False)
-    combine_validation_results(customers,accounts,merchants,transactions,validation_results,cross_validation_results)
-
+    filtered_data = filter_data(customers,accounts,merchants,transactions,validation_results,cross_validation_results)
+    transform_data(filter_data)
 
 if __name__ == "__main__":
     main()
