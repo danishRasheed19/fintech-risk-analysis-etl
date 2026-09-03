@@ -429,7 +429,7 @@ def produce_report(validation_results):
     print(f"END OF {validation_results["meta"]["name"].upper()} REPORT")
     print("=" * 60)
 
-def validate_customers(customers):
+def validate_customers(customers, console = False, html_report = False):
     validate_input(customers,"Customers")
     expected_cols = [
         "customer_id",
@@ -582,11 +582,13 @@ def validate_customers(customers):
 
         "overall_invalid": overall_invalid
     }
+    if console:
+        produce_report(validation_results)
+    if html_report:
+        produce_html_report(validation_results)
+    return overall_invalid
 
-    produce_report(validation_results)
-    produce_html_report(validation_results)
-
-def validate_merchants(merchants):
+def validate_merchants(merchants, console = False, html_report = False):
     validate_input(merchants,"merchants")
     expected_cols = [
     "merchant_id",
@@ -723,12 +725,14 @@ def validate_merchants(merchants):
     
             "overall_invalid": overall_invalid
     }
-    
-    produce_report(validation_results)
-    produce_html_report(validation_results)
+    if console:
+        produce_report(validation_results)
+    if html_report:
+        produce_html_report(validation_results)
+    return overall_invalid
 
 
-def validate_accounts(accounts):
+def validate_accounts(accounts, console = False, html_report = False):
     validate_input(accounts,"accounts")
     expected_cols = [
     "account_id",
@@ -881,9 +885,11 @@ def validate_accounts(accounts):
         
                 "overall_invalid": overall_invalid
     }
-        
-    produce_report(validation_results)
-    produce_html_report(validation_results)
+    if console:
+        produce_report(validation_results)
+    if html_report:
+        produce_html_report(validation_results)
+    return overall_invalid
 
 
 def validate_transaction_quality(transactions):
@@ -954,7 +960,7 @@ def validate_transaction_quality(transactions):
 
     return quality_issues
 
-def validate_transactions(transactions):
+def validate_transactions(transactions ,console = False, html_report = False):
     validate_input(transactions,"transactions")
     expected_cols = [
     "transaction_id",
@@ -1124,12 +1130,14 @@ def validate_transactions(transactions):
         
                 "overall_invalid": overall_invalid
     }
-        
-    produce_report(validation_results)
-    produce_html_report(validation_results)
+    if console:
+        produce_report(validation_results)
+    if html_report:
+        produce_html_report(validation_results)
+    return overall_invalid
 
-
-def validate_data(customers,accounts,merchants,transactions):
+def validate_data(customers,accounts,merchants,transactions, console = False, html_report = False):
+    validation_results = {}
     print("Validating Data")
 
     datasets = [
@@ -1140,9 +1148,20 @@ def validate_data(customers,accounts,merchants,transactions):
     ]
     for df, validator,name in datasets:
         try:
-            validator(df)
+            validation_results [name.lower()] = validator(df, console,html_report)
+            
         except ValidationError as e:
             print(f"\n{name.upper()} VALIDATION ERROR: {e}")
+            validation_results[name.lower()] = {
+            "status": "ERROR",
+            "error_type": "VALIDATION_ERROR",
+            "error": str(e)
+            }
         except Exception as e:
             print(f"\n{name.upper()} UNEXPECTED ERROR: {e}")
-
+            validation_results[name.lower()] = {
+                        "status": "ERROR",
+                        "error_type": "UNEXPECTED_ERROR",
+                        "error": str(e)
+                }
+    return validation_results

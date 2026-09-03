@@ -65,21 +65,24 @@ def validate_date(transactions, accounts):
     }
 
     
-def validate_cross_dataset(customers, accounts, merchants, transactions):
+def validate_cross_dataset(customers, accounts, merchants, transactions, html_report= False):
     
     print("VALIDATING CROSS DATASET")
 
     results = {}
 
-    results["account_customer"] = validate_accounts_of_customers(customers,accounts)
+    results["account_customer"] = validate_accounts_of_customers(accounts,customers)
 
-    results["transaction_account"] = validate_transaction_accounts(accounts,transactions)
+    results["transaction_account"] = validate_transaction_accounts(transactions,accounts)
 
     results["transaction_merchant"] = validate_transaction_merchants(merchants,transactions)
     
     results["transaction_date"] =validate_date(transactions,accounts)
-
-    produce_cross_validation_report(results)
+    
+    if html_report:
+        produce_cross_validation_report(results)
+    
+    return results
 
 
 
