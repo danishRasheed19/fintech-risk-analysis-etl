@@ -98,6 +98,12 @@ def validate_schema(df,expected_cols,expected_dtypes):
     unexpected_cols = set(df.columns) - set(expected_cols)
     invalid_dtypes = validate_dtypes(df,expected_dtypes)
 
+    if missing_cols or invalid_dtypes:
+        raise ValidationError(
+            f"Schema validation failed. "
+            f"Missing columns: {missing_cols}. "
+            f"Invalid dtypes: {invalid_dtypes}."
+        )
     return missing_cols,unexpected_cols,invalid_dtypes
 
 def validate_dtypes(df, expected_dtypes):
@@ -470,10 +476,6 @@ def validate_customers(customers, console = False, html_report = False):
         expected_dtypes
     )
 
-    # Schema-level mask
-    # Schema issues aren't naturally row-level, so start with all False
-    schema_invalid = pd.Series(False, index=customers.index)
-
     # Layer 2: Structural Validation
     invalid_rows, duplicate_ids = validate_structure(
         customers,
@@ -560,8 +562,7 @@ def validate_customers(customers, console = False, html_report = False):
         "schema": {
             "missing_cols": missing_cols,
             "unexpected_cols": unexpected_cols,
-            "invalid_dtypes": invalid_dtypes,
-            "invalid": schema_invalid
+            "invalid_dtypes": invalid_dtypes
         },
 
         "structural": {
@@ -586,7 +587,7 @@ def validate_customers(customers, console = False, html_report = False):
         produce_report(validation_results)
     if html_report:
         produce_html_report(validation_results)
-    return overall_invalid
+    return unexpected_cols,overall_invalid
 
 def validate_merchants(merchants, console = False, html_report = False):
     validate_input(merchants,"merchants")
@@ -729,7 +730,7 @@ def validate_merchants(merchants, console = False, html_report = False):
         produce_report(validation_results)
     if html_report:
         produce_html_report(validation_results)
-    return overall_invalid
+    return unexpected_cols,overall_invalid
 
 
 def validate_accounts(accounts, console = False, html_report = False):
@@ -889,7 +890,7 @@ def validate_accounts(accounts, console = False, html_report = False):
         produce_report(validation_results)
     if html_report:
         produce_html_report(validation_results)
-    return overall_invalid
+    return unexpected_cols,overall_invalid
 
 
 def validate_transaction_quality(transactions):
@@ -1134,7 +1135,7 @@ def validate_transactions(transactions ,console = False, html_report = False):
         produce_report(validation_results)
     if html_report:
         produce_html_report(validation_results)
-    return overall_invalid
+    return unexpected_cols,overall_invalid
 
 def validate_data(customers,accounts,merchants,transactions, console = False, html_report = False):
     validation_results = {}
@@ -1148,20 +1149,14 @@ def validate_data(customers,accounts,merchants,transactions, console = False, ht
     ]
     for df, validator,name in datasets:
         try:
-            validation_results [name.lower()] = validator(df, console,html_report)
+            unexpected_cols,invalid_rows = validator(df, console,html_report)
+            validation_results [name.lower()] = {"unexpected_cols": unexpected_cols,"invalid_rows":invalid_rows}
             
         except ValidationError as e:
             print(f"\n{name.upper()} VALIDATION ERROR: {e}")
-            validation_results[name.lower()] = {
-            "status": "ERROR",
-            "error_type": "VALIDATION_ERROR",
-            "error": str(e)
-            }
+            raise
+            
         except Exception as e:
             print(f"\n{name.upper()} UNEXPECTED ERROR: {e}")
-            validation_results[name.lower()] = {
-                        "status": "ERROR",
-                        "error_type": "UNEXPECTED_ERROR",
-                        "error": str(e)
-                }
+            raise
     return validation_results

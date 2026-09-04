@@ -24,7 +24,12 @@ def main():
     validation_results = validate_data(customers,accounts,merchants,transactions, False,False)
     cross_validation_results = validate_cross_dataset(customers,accounts,merchants,transactions, False)
     filtered_data = filter_data(customers,accounts,merchants,transactions,validation_results,cross_validation_results)
-    transform_data(filter_data)
-
+    transformed_data = transform_data(filtered_data["customers"]["valid"],filtered_data["accounts"]["valid"],filtered_data["merchants"]["valid"],filtered_data["transactions"]["valid"])
+    invalid_data = {
+        "customers" : filtered_data["customers"]["invalid"],
+        "accounts" : filtered_data["accounts"]["invalid"],
+        "merchants" : filtered_data["merchants"]["invalid"],
+        "transactions" : filtered_data["transactions"]["invalid"]
+    }
 if __name__ == "__main__":
     main()
