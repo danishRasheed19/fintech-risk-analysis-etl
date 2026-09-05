@@ -1,8 +1,9 @@
 from extract.extractor import extract_csv
-from validate.validator import validate_data
+from validate.validator import validate_data,validate_transformed_data
 from validate.cross_validation import validate_cross_dataset
 from filter.filter import filter_data
 from transform.transformation import transform_data
+from load.loading import load_as_csv
 def main():
     data_path = "../data/raw/"
 
@@ -31,5 +32,7 @@ def main():
         "merchants" : filtered_data["merchants"]["invalid"],
         "transactions" : filtered_data["transactions"]["invalid"]
     }
+    validate_transformed_data(transformed_data,False,True)
+    load_as_csv(transformed_data,invalid_data)
 if __name__ == "__main__":
     main()

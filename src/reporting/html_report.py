@@ -2,7 +2,7 @@ from datetime import datetime
 from pathlib import Path
 from html import escape
 
-def produce_html_report(validation_results):
+def produce_html_report(validation_results,is_transformed=False):
     """
     Generate an HTML data quality report from validation results.
     """
@@ -10,7 +10,8 @@ def produce_html_report(validation_results):
     dataset_name = validation_results["meta"]["name"]
     timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     output_dir = Path(f"../reports/validation/{dataset_name}")
-
+    if is_transformed:
+        output_dir = Path(f"../reports/validation/transformed/{dataset_name}")
     output_dir.mkdir(parents=True, exist_ok=True)
     output_path = output_dir / f"{dataset_name}_{timestamp}.html"
     

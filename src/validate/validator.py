@@ -3,6 +3,7 @@ import re
 from datetime import datetime
 from validate.validation_exceptions import ValidationError
 from reporting.html_report import produce_html_report
+from utils.dictionaries.expected_columns import expected_columns
 SUPPORTED_COUNTRIES = {
     "FR", "DE", "ES", "IT", "NL",
     "BE", "GB", "US", "CA", "AU",
@@ -1160,3 +1161,313 @@ def validate_data(customers,accounts,merchants,transactions, console = False, ht
             print(f"\n{name.upper()} UNEXPECTED ERROR: {e}")
             raise
     return validation_results
+
+def validate_transformed_data(transformed_data, console=False, html_report=True):
+
+    validation_results = {}
+
+    primary_keys = {
+        "customers": "customer_id",
+        "accounts": "account_id",
+        "merchants": "merchant_id",
+        "transactions": "transaction_id"
+    }
+
+    required_fields = {
+        "customers": [
+            "customer_id",
+            "first_name",
+            "last_name",
+            "email",
+            "country_code",
+            "country_name",
+            "account_type",
+            "account_created_at",
+            "customer_status"
+        ],
+
+        "accounts": [
+            "account_id",
+            "customer_id",
+            "account_type",
+            "currency_code",
+            "currency_name",
+            "balance",
+            "created_at",
+            "status"
+        ],
+
+        "merchants": [
+            "merchant_id",
+            "merchant_name",
+            "merchant_category",
+            "country_code",
+            "country_name",
+            "risk_category"
+        ],
+
+        "transactions": [
+            "transaction_id",
+            "account_id",
+            "merchant_id",
+            "transaction_timestamp",
+            "transaction_date",
+            "transaction_year",
+            "transaction_month",
+            "transaction_hour",
+            "transaction_type",
+            "amount",
+            "currency_code",
+            "currency_name",
+            "payment_method",
+            "country_code",
+            "country_name",
+            "status"
+        ]
+    }
+
+    expected_dtypes = {
+
+        "customers": {
+            "customer_id": "str",
+            "first_name": "str",
+            "last_name": "str",
+            "email": "str",
+            "country_code": "str",
+            "country_name": "str",
+            "account_type": "str",
+            "account_created_at": "datetime",
+            "customer_status": "str"
+        },
+
+        "accounts": {
+            "account_id": "str",
+            "customer_id": "str",
+            "account_type": "str",
+            "currency_code": "str",
+            "currency_name": "str",
+            "balance": "float64",
+            "created_at": "datetime",
+            "status": "str"
+        },
+
+        "merchants": {
+            "merchant_id": "str",
+            "merchant_name": "str",
+            "merchant_category": "str",
+            "country_code": "str",
+            "country_name": "str",
+            "risk_category": "str"
+        },
+
+        "transactions": {
+            "transaction_id": "str",
+            "account_id": "str",
+            "merchant_id": "str",
+            "transaction_timestamp": "datetime",
+            "transaction_date": "date",
+            "transaction_year": "int64",
+            "transaction_month": "int64",
+            "transaction_hour": "int64",
+            "transaction_type": "str",
+            "amount": "float64",
+            "currency_code": "str",
+            "currency_name": "str",
+            "payment_method": "str",
+            "country_code": "str",
+            "country_name": "str",
+            "status": "str"
+        }
+    }
+
+    try:
+
+        for name, df in transformed_data.items():
+
+            # ---------------------------------------------------------
+            # Check dataset name
+            # ---------------------------------------------------------
+
+            if name not in required_fields:
+
+                raise ValidationError(
+                    f"Unknown transformed dataset: {name}"
+                )
+
+            pk = primary_keys[name]
+            fields = required_fields[name]
+            dtypes = expected_dtypes[name]
+
+            # ---------------------------------------------------------
+            # Schema validation
+            # ---------------------------------------------------------
+
+            missing_cols = set(fields) - set(df.columns)
+
+            unexpected_cols = set(df.columns) - set(fields)
+
+            # Only validate dtypes for columns that actually exist
+            existing_expected_dtypes = {
+                column: dtype
+                for column, dtype in dtypes.items()
+                if column in df.columns
+            }
+
+            invalid_dtypes = validate_dtypes(
+                df,
+                existing_expected_dtypes
+            )
+
+            schema_invalid = bool(
+                missing_cols
+                or invalid_dtypes
+            )
+
+            # ---------------------------------------------------------
+            # Structural validation
+            # ---------------------------------------------------------
+
+            # Missing required fields
+            invalid_rows = df[fields].isnull()
+
+            # Duplicate primary keys
+            duplicate_ids = (
+                df.loc[
+                    df[pk].duplicated(keep=False),
+                    pk
+                ]
+                .dropna()
+                .unique()
+                .tolist()
+            )
+
+            structural_invalid = (
+                invalid_rows.any(axis=1)
+                |
+                df[pk].duplicated(keep=False)
+            )
+
+            # ---------------------------------------------------------
+            # Business validation
+            # ---------------------------------------------------------
+
+            # No additional business rules are required here.
+            # Business rules were already checked before transformation.
+
+            business_issues = {}
+
+            business_invalid = pd.Series(
+                False,
+                index=df.index
+            )
+
+            # ---------------------------------------------------------
+            # Data quality validation
+            # ---------------------------------------------------------
+
+            quality_issues = {}
+
+            for column in df.columns:
+
+                null_values = df[column].isnull()
+
+                if null_values.any():
+                    quality_issues[f"missing_{column}"] = null_values
+
+            if quality_issues:
+
+                quality_invalid = pd.concat(
+                    quality_issues.values(),
+                    axis=1
+                ).any(axis=1)
+
+            else:
+
+                quality_invalid = pd.Series(
+                    False,
+                    index=df.index
+                )
+
+            # ---------------------------------------------------------
+            # Overall validation
+            # ---------------------------------------------------------
+
+            overall_invalid = (
+                structural_invalid
+                | quality_invalid
+            )
+
+            # ---------------------------------------------------------
+            # Store results
+            # ---------------------------------------------------------
+
+            validation_results[name] = {
+
+                "meta": {
+                    "name": name,
+                    "df": df,
+                    "expected_dtypes": dtypes,
+                    "required_fields": fields,
+                    "pk": pk
+                },
+
+                "schema": {
+                    "missing_cols": missing_cols,
+                    "unexpected_cols": unexpected_cols,
+                    "invalid_dtypes": invalid_dtypes,
+                    "invalid": schema_invalid
+                },
+
+                "structural": {
+                    "invalid_rows": invalid_rows,
+                    "duplicate_ids": duplicate_ids,
+                    "invalid": structural_invalid
+                },
+
+                "business": {
+                    "issues": business_issues,
+                    "invalid": business_invalid
+                },
+
+                "quality": {
+                    "issues": quality_issues,
+                    "invalid": quality_invalid
+                },
+
+                "overall_invalid": overall_invalid
+
+            }
+
+        # -------------------------------------------------------------
+        # Reporting
+        # -------------------------------------------------------------
+
+        if console or html_report:
+
+            for name, result in validation_results.items():
+
+                if console:
+                    produce_report(result)
+
+                if html_report:
+                    produce_html_report(
+                        result,
+                        True
+                    )
+
+        return validation_results
+
+    except ValidationError as e:
+
+        print(
+            f"\nTRANSFORMED DATA VALIDATION ERROR: {e}"
+        )
+        raise
+
+    except Exception as e:
+
+        print(
+            f"\nUNEXPECTED ERROR DURING "
+            f"TRANSFORMED DATA VALIDATION: {e}"
+        )
+        raise
