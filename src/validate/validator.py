@@ -436,6 +436,15 @@ def produce_report(validation_results):
     print(f"END OF {validation_results["meta"]["name"].upper()} REPORT")
     print("=" * 60)
 
+def generate_rejection_reasons(index, issues):
+
+    reasons = pd.Series("", index=index, dtype="object")
+
+    for reason, mask in issues.items():
+        reasons.loc[mask] += f"{reason}; "
+
+    return reasons.str.rstrip("; ")
+
 def validate_customers(customers, console = False, html_report = False):
     validate_input(customers,"Customers")
     expected_cols = [
@@ -483,7 +492,15 @@ def validate_customers(customers, console = False, html_report = False):
         "customer_id",
         required_fields
     )
-
+    structural_issues = {}
+    
+    for column in invalid_rows.columns:
+        structural_issues[f"MISSING {column.upper()}"] = invalid_rows[column]
+    
+    # Duplicate IDs
+    structural_issues["DUPLICATE CUSTOMER ID"] = (
+    customers["customer_id"].duplicated()
+    )
     # Convert column-level missing-value DataFrame
     # into a row-level mask
     structural_invalid = invalid_rows.any(axis=1)
@@ -523,10 +540,10 @@ def validate_customers(customers, console = False, html_report = False):
 
     if invalid_countries.any() or invalid_accounts.any() or invalid_statuses.any() or invalid_dates.any():
         business_issues = {
-            "Invalid Countries": invalid_countries,
-            "Invalid Accounts": invalid_accounts,
-            "Invalid Statuses": invalid_statuses,
-            "Invalid Dates": invalid_dates
+            "Invalid Country": invalid_countries,
+            "Invalid Account Type": invalid_accounts,
+            "Invalid Customer Status": invalid_statuses,
+            "Invalid Date": invalid_dates
         }
 
     # Layer 4: Data Quality
@@ -542,7 +559,12 @@ def validate_customers(customers, console = False, html_report = False):
             quality_invalid
             | customers["customer_id"].isin(issue_ids)
         )
+    
+    #creating quality mask for rejection reasons
+    quality_masks = {}
 
+    for issue, issue_ids in quality_issues.items():
+        quality_masks[issue] = customers["customer_id"].isin(issue_ids)
     # Overall invalid mask
     overall_invalid = (
         structural_invalid
@@ -584,11 +606,17 @@ def validate_customers(customers, console = False, html_report = False):
 
         "overall_invalid": overall_invalid
     }
+    all_issues = {
+    **structural_issues,
+    **business_issues,
+    **quality_masks
+    }
+    rejection_reasons = generate_rejection_reasons(customers.index,all_issues)
     if console:
         produce_report(validation_results)
     if html_report:
         produce_html_report(validation_results)
-    return unexpected_cols,overall_invalid
+    return unexpected_cols,overall_invalid,rejection_reasons
 
 def validate_merchants(merchants, console = False, html_report = False):
     validate_input(merchants,"merchants")
@@ -644,6 +672,14 @@ def validate_merchants(merchants, console = False, html_report = False):
         | merchants["merchant_id"].duplicated()
     )
 
+    structural_issues = {}
+    for column in invalid_rows.columns:
+        structural_issues[f"MISSING {column.upper()}"] = invalid_rows[column]
+        
+     # Duplicate IDs
+    structural_issues["DUPLICATE CUSTOMER ID"] = (
+    merchants["merchant_id"].duplicated()
+    )
     # Layer 3: Business Rules
     invalid_countries = ~merchants["country"].isin(SUPPORTED_COUNTRIES)
 
@@ -664,9 +700,9 @@ def validate_merchants(merchants, console = False, html_report = False):
 
     if invalid_countries.any() or invalid_merchant_categories.any() or invalid_risk_categories.any():
         business_issues = {
-            "Invalid Countries": invalid_countries,
-            "Invalid Merchant Categories": invalid_merchant_categories,
-            "Invalid Risk Categories": invalid_risk_categories,
+            "Invalid Country": invalid_countries,
+            "Invalid Merchant Category": invalid_merchant_categories,
+            "Invalid Risk Category": invalid_risk_categories,
         }
     else:
         business_issues = {}
@@ -677,6 +713,10 @@ def validate_merchants(merchants, console = False, html_report = False):
     # Overall quality mask
     quality_invalid = pd.Series(False, index=merchants.index)
 
+    quality_masks = {}
+
+    for issue, issue_ids in quality_issues.items():
+        quality_masks[issue] = merchants["merchant_id"].isin(issue_ids)
     # We need to convert the customer IDs stored in quality_issues
     # back into a row-level mask
     for issue_ids in quality_issues.values():
@@ -727,11 +767,17 @@ def validate_merchants(merchants, console = False, html_report = False):
     
             "overall_invalid": overall_invalid
     }
+    all_issues = {
+        **structural_issues,
+        **business_issues,
+        **quality_masks
+    }
+    rejection_reasons = generate_rejection_reasons(merchants.index,all_issues)
     if console:
         produce_report(validation_results)
     if html_report:
         produce_html_report(validation_results)
-    return unexpected_cols,overall_invalid
+    return unexpected_cols,overall_invalid,rejection_reasons
 
 
 def validate_accounts(accounts, console = False, html_report = False):
@@ -793,7 +839,15 @@ def validate_accounts(accounts, console = False, html_report = False):
         structural_invalid
         | accounts["account_id"].duplicated()
     )
+    structural_issues ={}
     
+    for column in invalid_rows.columns:
+        structural_issues[f"MISSING {column.upper()}"] = invalid_rows[column]
+        
+     # Duplicate IDs
+    structural_issues["DUPLICATE CUSTOMER ID"] = (
+    accounts["account_id"].duplicated()
+    )
     # Layer 3: Business Rules
     invalid_account_types = ~accounts["account_type"].isin(VALID_ACCOUNT_TYPES)
     
@@ -845,6 +899,10 @@ def validate_accounts(accounts, console = False, html_report = False):
             | accounts["account_id"].isin(issue_ids)
         )
     
+    quality_masks = {}
+
+    for issue, issue_ids in quality_issues.items():
+        quality_masks[issue] = accounts["account_id"].isin(issue_ids)
     # Overall invalid mask
     overall_invalid = (
         structural_invalid
@@ -887,11 +945,17 @@ def validate_accounts(accounts, console = False, html_report = False):
         
                 "overall_invalid": overall_invalid
     }
+    all_issues={
+        **structural_issues,
+        **business_issues,
+        **quality_masks
+    }
+    rejection_reasons = generate_rejection_reasons(accounts.index,all_issues)
     if console:
         produce_report(validation_results)
     if html_report:
         produce_html_report(validation_results)
-    return unexpected_cols,overall_invalid
+    return unexpected_cols,overall_invalid,rejection_reasons
 
 
 def validate_transaction_quality(transactions):
@@ -1031,6 +1095,15 @@ def validate_transactions(transactions ,console = False, html_report = False):
         | transactions["transaction_id"].duplicated()
     )
     
+    structural_issues ={}
+    
+    for column in invalid_rows.columns:
+        structural_issues[f"MISSING {column.upper()}"] = invalid_rows[column]
+    
+     # Duplicate IDs
+    structural_issues["DUPLICATE CUSTOMER ID"] = (
+    transactions["transaction_id"].duplicated()
+    )    
     # Layer 3: Business Rules
     invalid_transaction_types = ~transactions["transaction_type"].isin(VALID_TRANSACTION_TYPES)
     
@@ -1065,13 +1138,13 @@ def validate_transactions(transactions ,console = False, html_report = False):
     
     if invalid_transaction_types.any() or invalid_payment_methods.any() or invalid_amounts.any() or invalid_currencies.any() or invalid_dates.any() or invalid_countries.any() or invalid_transaction_statuses.any():
             business_issues = {
-                "Invalid Transaction Types": invalid_transaction_types,
-                "Invalid Payment Methods": invalid_payment_methods,
-                "Invalid Amounts": invalid_amounts,
-                "Invalid Currencies": invalid_currencies,
-                "Invalid Dates": invalid_dates,
-                "Invalid Countries" : invalid_countries,
-                "Invalid Transaction Statuses": invalid_transaction_statuses
+                "Invalid Transaction Type": invalid_transaction_types,
+                "Invalid Payment Method": invalid_payment_methods,
+                "Invalid Amount": invalid_amounts,
+                "Invalid Currency": invalid_currencies,
+                "Invalid Date": invalid_dates,
+                "Invalid Country" : invalid_countries,
+                "Invalid Transaction Status": invalid_transaction_statuses
             }
     else:
         business_issues = {}
@@ -1089,6 +1162,11 @@ def validate_transactions(transactions ,console = False, html_report = False):
             quality_invalid
             | transactions["transaction_id"].isin(issue_ids)
         )
+    
+    quality_masks = {}
+
+    for issue, issue_ids in quality_issues.items():
+        quality_masks[issue] = transactions["transaction_id"].isin(issue_ids)
     
     # Overall invalid mask
     overall_invalid = (
@@ -1132,11 +1210,17 @@ def validate_transactions(transactions ,console = False, html_report = False):
         
                 "overall_invalid": overall_invalid
     }
+    all_issues = {
+        **structural_issues,
+        **business_issues,
+        **quality_masks
+    }
+    rejection_reasons = generate_rejection_reasons(transactions.index,all_issues)
     if console:
         produce_report(validation_results)
     if html_report:
         produce_html_report(validation_results)
-    return unexpected_cols,overall_invalid
+    return unexpected_cols,overall_invalid,rejection_reasons
 
 def validate_data(customers,accounts,merchants,transactions, console = False, html_report = False):
     validation_results = {}
@@ -1150,8 +1234,8 @@ def validate_data(customers,accounts,merchants,transactions, console = False, ht
     ]
     for df, validator,name in datasets:
         try:
-            unexpected_cols,invalid_rows = validator(df, console,html_report)
-            validation_results [name.lower()] = {"unexpected_cols": unexpected_cols,"invalid_rows":invalid_rows}
+            unexpected_cols,invalid_rows,rejection_reasons = validator(df, console,html_report)
+            validation_results [name.lower()] = {"unexpected_cols": unexpected_cols,"invalid_rows":invalid_rows,"rejection_reasons":rejection_reasons}
             
         except ValidationError as e:
             print(f"\n{name.upper()} VALIDATION ERROR: {e}")
