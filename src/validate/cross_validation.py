@@ -8,7 +8,7 @@ def validate_accounts_of_customers(accounts,customers):
     
     invalid_accounts = accounts[~accounts["customer_id"].isin(customer_ids)]
     
-    return { "name": "ACCOUNT_CUSTOMER_RELATIONSHIP", "invalid_records": invalid_accounts, "invalid_count": len(invalid_accounts), "status": len(invalid_accounts) == 0 }
+    return { "name": "ACCOUNT_CUSTOMER_RELATIONSHIP", "invalid_records": invalid_accounts, "invalid_count": len(invalid_accounts), "status": len(invalid_accounts) == 0 ,"reason": "Account does not have a customer" }
 
 def validate_transaction_accounts(transactions,accounts):
     """
@@ -16,7 +16,7 @@ def validate_transaction_accounts(transactions,accounts):
     """
     account_ids = set (accounts["account_id"])
     invalid_transactions = transactions[~transactions["account_id"].isin(account_ids)]
-    return { "name": "TRANSACTION_ACCOUNT_RELATIONSHIP", "invalid_records": invalid_transactions, "invalid_count": len(invalid_transactions), "status": len(invalid_transactions) == 0 }
+    return { "name": "TRANSACTION_ACCOUNT_RELATIONSHIP", "invalid_records": invalid_transactions, "invalid_count": len(invalid_transactions), "status": len(invalid_transactions) == 0, "reason" : "Transaction does not have account"}
 
 def validate_transaction_merchants(merchants, transactions):
     """
@@ -29,7 +29,7 @@ def validate_transaction_merchants(merchants, transactions):
         ~transactions["merchant_id"].isin(merchant_ids)
     ]
 
-    return { "name": "TRANSACTION_MERCHANT_RELATIONSHIP", "invalid_records": invalid_transactions, "invalid_count": len(invalid_transactions), "status": len(invalid_transactions) == 0 }
+    return { "name": "TRANSACTION_MERCHANT_RELATIONSHIP", "invalid_records": invalid_transactions, "invalid_count": len(invalid_transactions), "status": len(invalid_transactions) == 0, "reason" : "Transaction does not have a merchant"}
 
 def validate_date(transactions, accounts):
 
@@ -61,7 +61,8 @@ def validate_date(transactions, accounts):
         "name": "TRANSACTION_DATE",
         "invalid_records": invalid_transactions,
         "invalid_count": len(invalid_transactions),
-        "status": len(invalid_transactions) == 0
+        "status": len(invalid_transactions) == 0,
+        "reason" : "Invalid Date"
     }
 
     
