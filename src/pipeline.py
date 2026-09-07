@@ -1,4 +1,4 @@
-from extract.extractor import extract_csv
+from extract.extractor import extract_csv,apply_watermark
 from validate.validator import validate_data,validate_transformed_data
 from validate.cross_validation import validate_cross_dataset
 from filter.filter import filter_data
@@ -11,6 +11,10 @@ def main():
     accounts = extract_csv(data_path + "accounts.csv")
     merchants = extract_csv(data_path + "merchants.csv")
     transactions = extract_csv(data_path + "transactions.csv")
+    
+    customers = apply_watermark(customers,"customers","account_created_at")
+    accounts = apply_watermark(accounts,"accounts","created_at")
+    transactions = apply_watermark(transactions,"transactions","transaction_timestamp")
 
     print("\nExtraction completed successfully.")
 
