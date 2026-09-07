@@ -1,7 +1,7 @@
 import pandas as pd
 from datetime import datetime
 from pathlib import Path
-
+from load.watermark import set_watermarks
 def load_as_csv(transformed_data,rejected_data):
     #loading rejected data
     try:
@@ -31,3 +31,22 @@ def load_as_csv(transformed_data,rejected_data):
         print(f"UNEXPECTED ERROR DURING LOADING: {e}")
         raise
         
+def load_data(transformed_data,rejected_data):
+    customer_watermark = transformed_data["customers"]["account_created_at"].max()
+    account_watermark = transformed_data["accounts"]["created_at"].max()
+    transaction_watermark = transformed_data["transactions"]["transaction_timestamp"].max()   
+    
+    print(customer_watermark)
+    load_as_csv(transformed_data,rejected_data)
+    
+    # Only update watermarks after successful loading
+    if pd.notna(customer_watermark):
+        set_watermarks("customers", customer_watermark)
+
+    if pd.notna(account_watermark):
+        set_watermarks("accounts", account_watermark)
+
+    if pd.notna(transaction_watermark):
+        set_watermarks("transactions", transaction_watermark)
+    
+    print("Watermarks updated")

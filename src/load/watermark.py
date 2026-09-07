@@ -2,7 +2,9 @@ import json
 from pathlib import Path
 from datetime import datetime
 
-WATERMARK_PATH = Path("../../data/metadata/watermarks.json")
+BASE_DIR = Path(__file__).resolve().parents[2]
+
+WATERMARK_PATH = BASE_DIR / "data" / "metadata" / "watermarks.json"
 DEFAULT_WATERMARKS = {
     "customers": None,
     "accounts": None,
@@ -12,6 +14,7 @@ DEFAULT_WATERMARKS = {
 def load_watermarks():
     try:
         WATERMARK_PATH.parent.mkdir(parents=True,exist_ok=True)
+        print("WATERMARK PATH:", WATERMARK_PATH.resolve())
         if not WATERMARK_PATH.exists():
             save_watermarks(DEFAULT_WATERMARKS)
             return DEFAULT_WATERMARKS.copy()

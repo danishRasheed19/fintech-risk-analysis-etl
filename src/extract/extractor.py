@@ -12,8 +12,9 @@ def extract_csv(file_path):
     return df
 
 def apply_watermark(df,dataset,incremental_column):
+    print(f"Applying Watermark for {dataset}")
     watermark = get_watermark(dataset)
-    
+    print(watermark)
     if watermark is None:
         print(f"{dataset}: No watermark found. Processing all records.")
         return df

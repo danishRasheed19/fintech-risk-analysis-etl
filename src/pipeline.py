@@ -3,7 +3,7 @@ from validate.validator import validate_data,validate_transformed_data
 from validate.cross_validation import validate_cross_dataset
 from filter.filter import filter_data
 from transform.transformation import transform_data
-from load.loading import load_as_csv
+from load.loading import load_data
 def main():
     data_path = "../data/raw/"
 
@@ -37,6 +37,6 @@ def main():
         "transactions" : filtered_data["transactions"]["invalid"]
     }
     validate_transformed_data(transformed_data,False,True)
-    load_as_csv(transformed_data,invalid_data)
+    load_data(transformed_data,invalid_data)
 if __name__ == "__main__":
     main()
