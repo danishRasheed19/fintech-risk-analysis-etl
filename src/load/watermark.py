@@ -1,51 +1,53 @@
-import json
-from pathlib import Path
 from datetime import datetime
+import psycopg2
+from load.postgres_loader import get_connection
 
-BASE_DIR = Path(__file__).resolve().parents[2]
-
-WATERMARK_PATH = BASE_DIR / "data" / "metadata" / "watermarks.json"
-DEFAULT_WATERMARKS = {
-    "customers": None,
-    "accounts": None,
-    "transactions": None
-}
-
-def load_watermarks():
-    try:
-        WATERMARK_PATH.parent.mkdir(parents=True,exist_ok=True)
-        print("WATERMARK PATH:", WATERMARK_PATH.resolve())
-        if not WATERMARK_PATH.exists():
-            save_watermarks(DEFAULT_WATERMARKS)
-            return DEFAULT_WATERMARKS.copy()
-        with open(WATERMARK_PATH,"r") as file:
-            return json.load(file)
-    except (OSError, json.JSONDecodeError) as e:
-        print(f"ERROR LOADING WATERMARKS: {e}")
-        raise
-
-def save_watermarks(watermarks):
-    try:
-        WATERMARK_PATH.parent.mkdir(parents=True,exist_ok=True)
-        with open (WATERMARK_PATH,"w") as file:
-            json.dump(watermarks,file,indent=4)
-    except OSError as e:
-        print(f"ERROR SAVING WATERMARKS: {e}")
-        raise
 
 def get_watermark(dataset):
-    watermarks = load_watermarks()
-    return watermarks.get(dataset)
+    # watermarks = load_watermarks()
+    print(f"GETTING WATERMARK FOR {dataset}")
+    connection = get_connection()
+    cursor = connection.cursor()
+    try:
+        query = """
+        SELECT watermark from metadata.watermarks 
+        where dataset_name = %s
+        """
+        cursor.execute(query,(dataset,))
+        watermark = cursor.fetchone()[0]
+        return watermark
+    except psycopg2.Error as e:
+        print(f"POSTGRESQL CONNECTION ERROR: {e}")
+        raise
+    finally:
+        cursor.close()
+        connection.close()
 
 def set_watermarks(dataset,timestamp):
-    watermarks = load_watermarks()
-    if dataset not in watermarks:
-        raise ValueError(
-            f"Unsupported dataset for watermarking: {dataset}"
-        )
-    
-    if isinstance(timestamp,datetime):
-        timestamp = timestamp.isoformat()
-    
-    watermarks[dataset] = timestamp
-    save_watermarks(watermarks)
+    print(f"UPDATING WATERMARK FOR: {dataset}")
+    connection = get_connection()
+    cursor = connection.cursor()
+    try:
+        query = f"""
+        UPDATE metadata.watermarks 
+        SET
+        watermark = %s,
+        updated_at = CURRENT_TIMESTAMP
+        where dataset_name = %s
+        """      
+        if isinstance(timestamp,datetime):
+            timestamp = timestamp.isoformat()
+            
+        cursor.execute(query,(timestamp,dataset))
+        if cursor.rowcount == 0:
+            raise ValueError(
+                f"Unsupported dataset for watermarking: {dataset}"
+            )
+        connection.commit()
+    except psycopg2.Error as e:
+        connection.rollback()
+        print(f"ERROR while updating watermark for {dataset}: {e}")
+        raise
+    finally:
+        cursor.close()
+        connection.close()
