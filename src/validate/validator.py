@@ -1234,6 +1234,14 @@ def validate_data(customers,accounts,merchants,transactions, console = False, ht
     ]
     for df, validator,name in datasets:
         try:
+            if df.empty:
+                print(f"{name.upper()}: NO NEW RECORDS - SKIPPING VALIDATION")
+                validation_results[name.lower()] = {
+                "unexpected_cols": [],
+                "invalid_rows": pd.Series(False, index=df.index),
+                "rejection_reasons": pd.Series("", index=df.index)
+    }
+                continue
             unexpected_cols,invalid_rows,rejection_reasons = validator(df, console,html_report)
             validation_results [name.lower()] = {"unexpected_cols": unexpected_cols,"invalid_rows":invalid_rows,"rejection_reasons":rejection_reasons}
             

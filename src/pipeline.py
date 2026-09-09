@@ -28,7 +28,7 @@ def main():
     print(f"Transactions:  {len(transactions):,}")
 
     validation_results = validate_data(customers,accounts,merchants,transactions, False,False)
-    cross_validation_results = validate_cross_dataset(customers,accounts,merchants,transactions, False)
+    cross_validation_results = validate_cross_dataset(customers,accounts,merchants,transactions, True)
     filtered_data = filter_data(customers,accounts,merchants,transactions,validation_results,cross_validation_results)
     transformed_data = transform_data(filtered_data["customers"]["valid"],filtered_data["accounts"]["valid"],filtered_data["merchants"]["valid"],filtered_data["transactions"]["valid"])
     invalid_data = {

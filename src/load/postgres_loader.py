@@ -1,6 +1,7 @@
 import psycopg2
 from psycopg2 import sql
 from psycopg2.extras import execute_values
+import pandas as pd
 def get_connection():
     try:
         connection = psycopg2.connect(
@@ -40,9 +41,50 @@ def load_dataframe(df,table_name):
         cursor.close()
         conncetion.close()
 
+def get_existing_ids(table_name,column_name):
+    connection = get_connection()
+    cursor = connection.cursor()
+    try:
+        query = f"""
+        SELECT {column_name} from staging.{table_name}
+        """
+        cursor.execute(query)
+        ids = {row[0] for row in cursor.fetchall()}
+        return ids
+    except psycopg2.Error as e:
+        print(f"Error while fetching ids for: {table_name} , {e}")
+        raise
+    finally:
+        cursor.close()
+        connection.close()
+        
+def get_existing_accounts():
 
-def main():
-    load_dataframe("mdfs","Temp table")
-    
-if __name__ == "__main__":
-    main()
+    connection = get_connection()
+    cursor = connection.cursor()
+
+    try:
+
+        query = """
+            SELECT account_id, created_at
+            FROM staging.accounts
+        """
+
+        cursor.execute(query)
+
+        accounts = cursor.fetchall()
+
+        return pd.DataFrame(
+            accounts,
+            columns=["account_id", "created_at"]
+        )
+
+    except psycopg2.Error as e:
+
+        print(f"ERROR WHILE FETCHING EXISTING ACCOUNTS: {e}")
+        raise
+
+    finally:
+
+        cursor.close()
+        connection.close()
