@@ -4,6 +4,7 @@ from validate.cross_validation import validate_cross_dataset
 from filter.filter import filter_data
 from transform.transformation import transform_data
 from load.loading import load_data
+from load.postgres_loader import load_dataframe
 def main():
     data_path = "../data/raw/"
 
