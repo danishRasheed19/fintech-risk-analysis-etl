@@ -1,4 +1,4 @@
-from extract.extractor import extract_csv,apply_watermark
+from extract.extractor import extract_csv,apply_watermark,apply_pk_watermark
 from validate.validator import validate_data,validate_transformed_data
 from validate.cross_validation import validate_cross_dataset
 from filter.filter import filter_data
@@ -16,7 +16,8 @@ def main():
     customers = apply_watermark(customers,"customers","account_created_at")
     accounts = apply_watermark(accounts,"accounts","created_at")
     transactions = apply_watermark(transactions,"transactions","transaction_timestamp")
-
+    merchants = apply_pk_watermark(merchants,"merchants","merchant_id")
+    
     print("\nExtraction completed successfully.")
 
     print("\nDataset sizes:")
@@ -27,7 +28,7 @@ def main():
     print(f"Merchants:     {len(merchants):,}")
     print(f"Transactions:  {len(transactions):,}")
 
-    validation_results = validate_data(customers,accounts,merchants,transactions, False,False)
+    validation_results = validate_data(customers,accounts,merchants,transactions, False,True)
     cross_validation_results = validate_cross_dataset(customers,accounts,merchants,transactions, True)
     filtered_data = filter_data(customers,accounts,merchants,transactions,validation_results,cross_validation_results)
     transformed_data = transform_data(filtered_data["customers"]["valid"],filtered_data["accounts"]["valid"],filtered_data["merchants"]["valid"],filtered_data["transactions"]["valid"])
