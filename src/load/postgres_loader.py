@@ -88,3 +88,6 @@ def get_existing_accounts():
 
         cursor.close()
         connection.close()
+        
+def load_df_into_warehouse():
+    return None

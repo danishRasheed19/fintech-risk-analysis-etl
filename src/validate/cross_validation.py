@@ -204,10 +204,18 @@ def validate_cross_dataset(
         accounts,
         customers
     )
+    
+    invalid_account_ids = set(
+        results["account_customer"]["invalid_records"]["account_id"]
+    )
+
+    valid_accounts = accounts[
+        ~accounts["account_id"].isin(invalid_account_ids)
+    ].copy()
 
     results["transaction_account"] = validate_transaction_accounts(
         transactions,
-        accounts
+        valid_accounts
     )
 
     results["transaction_merchant"] = validate_transaction_merchants(
