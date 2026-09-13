@@ -25,7 +25,8 @@ DIM_CUSTOMER_QUERY = f"""
     account_type,
     account_created_at,
     customer_status
-    FROM staging.customers;
+    FROM staging.customers
+    ON CONFLICT (customer_id) DO NOTHING;
         """
 
 DIM_ACCOUNT_QUERY= f"""
@@ -48,7 +49,8 @@ SELECT
     currency_name,
     created_at,
     status
-FROM staging.accounts;
+FROM staging.accounts
+ON CONFLICT (account_id) DO NOTHING;
 """
 
 DIM_MERCHANT_QUERY = f"""
@@ -67,7 +69,8 @@ SELECT
     country_code,
     country_name,
     risk_category
-FROM staging.merchants;
+FROM staging.merchants
+ON CONFLICT (merchant_id) DO NOTHING;
 """
 
 DIM_DATE_QUERY = f"""
@@ -93,7 +96,8 @@ SELECT DISTINCT
     EXTRACT(ISODOW FROM transaction_date)::INTEGER AS day_of_week,
     TO_CHAR(transaction_date, 'Day') AS day_name
 FROM staging.transactions
-WHERE transaction_date IS NOT NULL;
+WHERE transaction_date IS NOT NULL
+ON CONFLICT (date_key) DO NOTHING;
 """
 
 FACT_TRANSATION_QUERY = f"""
@@ -130,7 +134,8 @@ SELECT
     t.status
 FROM staging.transactions t
 JOIN staging.accounts a
-    ON t.account_id = a.account_id;
+    ON t.account_id = a.account_id
+ON CONFLICT (transaction_id) DO NOTHING;
 """
 def load_into_warehouse():
     print("LOADING INTO WAREHOUSE")
