@@ -1,7 +1,7 @@
 customer_id,first_name,last_name,email,country,account_type,account_created_at,customer_status
 CUSTOMER000001,Da nielle,Johnson!!,john21@,JP,CHECKINGS,4/15/2026 20:44,ACTIVEty
 CUST000002,Christopher,Henderson,davisjesse@example.net,SG,SAVINGS,11/15/2021 21:55,ACTIVE
-CUST000003,Anna,Baldwin,lrobinson@example.com,IT,CHECKING,9/14/2021 15:50,ACTIVE
+CUST000003,,Baldwin,,IT,CHECKING,9/14/2021 15:50,ACTIVE
 CUST000004,Katherine,Moore,jpeterson@example.org,JP,BUSINESS,7/6/2024 5:34,CLOSED
 CUST000005,Curtis,James,melanie94@example.org,DE,BUSINESS,7/22/2025 20:27,SUSPENDED
 CUST000006,Amanda,Dudley,smiller@example.net,FR,CHECKING,9/22/2024 0:43,ACTIVE
