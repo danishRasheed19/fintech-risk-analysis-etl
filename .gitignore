@@ -2,7 +2,7 @@
 __pycache__/
 *.py[cod]
 *$py.class
-    
+
 # Virtual environments
 .venv/
 venv/
@@ -21,3 +21,11 @@ env/
 # OS
 .DS_Store
 Thumbs.db
+
+# Generated ETL data
+data/processed/
+data/rejected/
+data/metadata/
+
+# Generated reports
+reports/
