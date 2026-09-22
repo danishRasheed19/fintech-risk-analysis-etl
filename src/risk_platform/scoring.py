@@ -69,9 +69,22 @@ def calculate_interaction_score(df):
 
     return df
 
+def assign_risk_level(df):
+    df = df.copy()
+
+    df["risk_level"] = pd.cut(
+        df["risk_score"],
+        bins=[-1, 5, 10, 17, float("inf")],
+        labels=["LOW", "MEDIUM", "HIGH", "CRITICAL"]
+    )
+
+    return df
+
 def calculate_risk_score(df):
     df = df.copy()
     
     df = calculate_base_score(df)
     df = calculate_interaction_score(df)
+    df = assign_risk_level(df)
     return df
+

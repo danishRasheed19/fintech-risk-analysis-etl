@@ -7,25 +7,6 @@ def main():
     print("STARTING RISK PIPELINE")
     df = fetch_transaction_risk_data()
     df = build_transaction_features(df)
-    # print(df[[
-    # "transaction_id",
-    # "risk_category",
-    # "merchant_risk_score",
-    # "currency_mismatch",
-    # "country_mismatch",
-    # "is_reversed",
-    # "is_suspended_account",
-    # "is_closed_account",
-    # "is_weekend",
-    # "transaction_hour"
-    # ]].head(10))
     df = calculate_risk_score(df)
-    print(
-    df["risk_score"]
-    .value_counts(normalize=True)
-    .sort_index()
-    .mul(100)
-    .round(2)
-)
 if __name__ == "__main__":
     main()
