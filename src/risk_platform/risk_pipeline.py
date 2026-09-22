@@ -1,7 +1,7 @@
 import pandas as pd
 from src.risk_platform.queries import fetch_transaction_risk_data
 from src.risk_platform.features import build_transaction_features
-from src.risk_platform.scoring import calculate_base_score
+from src.risk_platform.scoring import calculate_risk_score
 
 def main():
     print("STARTING RISK PIPELINE")
@@ -19,9 +19,13 @@ def main():
     # "is_weekend",
     # "transaction_hour"
     # ]].head(10))
-    df = calculate_base_score(df)
-    print(df[["risk_score"]].head())
-    print(df["risk_score"].describe())
-    print(df["risk_score"].value_counts().sort_index())
+    df = calculate_risk_score(df)
+    print(
+    df["risk_score"]
+    .value_counts(normalize=True)
+    .sort_index()
+    .mul(100)
+    .round(2)
+)
 if __name__ == "__main__":
     main()

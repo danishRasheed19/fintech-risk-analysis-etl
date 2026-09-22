@@ -21,3 +21,57 @@ def calculate_base_score(df):
     )
     
     return df
+
+def calculate_interaction_score(df):
+    df = df.copy()
+    
+    df["interaction_score"] = 0
+    
+    #suspended account and country mismatch
+    df.loc[
+        (df["country_mismatch"] == 1) & (df["is_suspended_account"] == 1), "interaction_score"
+    ] += 4
+    
+    #closed account and country mismatch
+    df.loc[
+        (df["country_mismatch"] == 1) & (df["is_closed_account"] == 1), "interaction_score"
+    ] +=4
+    
+    #high risk merchant and country mismatch
+    df.loc[
+        (df["country_mismatch"] == 1) & (df["merchant_risk_score"] == 3) , "interaction_score"
+    ] += 3
+    
+    #High risk merchant and reversed transaction
+    df.loc[
+        (df["merchant_risk_score"] == 3) & (df["is_reversed"] == 1), "interaction_score"
+    ] += 2
+    
+    # Suspended/closed account and reversed transaction
+    df.loc[
+        (
+            (df["is_suspended_account"] == 1) |
+            (df["is_closed_account"] == 1)
+        ) &
+        (df["is_reversed"] == 1),
+        "interaction_score"
+    ] += 3
+
+    # Country mismatch and night transaction
+    df.loc[
+        (df["country_mismatch"] == 1) &
+        (df["is_night"] == 1),
+        "interaction_score"
+    ] += 2
+
+    # Add interaction points to base score
+    df["risk_score"] += df["interaction_score"]
+
+    return df
+
+def calculate_risk_score(df):
+    df = df.copy()
+    
+    df = calculate_base_score(df)
+    df = calculate_interaction_score(df)
+    return df
