@@ -38,6 +38,11 @@ def is_closed_account(df):
 def add_time_features(df):
     df = df.copy()
     df["transaction_hour"] = df["transaction_timestamp"].dt.hour
+    
+    df["is_night"] = (
+    (df["transaction_hour"] < 6) |
+    (df["transaction_hour"] >= 22)
+    ).astype(int)
 
     df["is_weekend"] = (
         df["transaction_timestamp"].dt.dayofweek >= 5
@@ -47,11 +52,30 @@ def add_time_features(df):
 def build_transaction_features(df):
     df = df.copy()
     df = merchant_risk(df)
-    df = currency_mismatch(df)
     df = country_mismatch(df)
     df = is_reversed(df)
     df = is_suspended_account(df)
     df = is_closed_account(df)
     df = add_time_features(df)
     return df
-        
+
+
+def describe_features(df):
+    print("Describing the features: ")
+    print(df[[
+    "merchant_risk_score",
+    "country_mismatch",
+    "is_reversed",
+    "is_suspended_account",
+    "is_closed_account",
+    "transaction_hour",
+    "is_night",
+    "is_weekend"
+    ]].describe())
+    
+    print(f"Country Mismatch: {df["country_mismatch"].value_counts()}")
+    print(f"Is Reversed: {df["is_reversed"].value_counts()}")
+    print(f"Is suspended: {df["is_suspended_account"].value_counts()}")
+    print(f"Is closed account: {df["is_closed_account"].value_counts()}")
+    print(f"Is night: {df["is_night"].value_counts()}")
+    print(f"Is weekend: {df["is_weekend"].value_counts()}")
