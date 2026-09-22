@@ -76,7 +76,7 @@ def assign_risk_level(df):
         df["risk_score"],
         bins=[-1, 5, 10, 17, float("inf")],
         labels=["LOW", "MEDIUM", "HIGH", "CRITICAL"]
-    )
+    ).astype(str)
 
     return df
 
