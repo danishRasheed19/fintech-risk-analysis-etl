@@ -80,11 +80,47 @@ def assign_risk_level(df):
 
     return df
 
+def get_reasons(row):
+        reasons = []
+
+        if row["merchant_risk_score"] == 3:
+            reasons.append("High-risk merchant")
+        elif row["merchant_risk_score"] == 2:
+            reasons.append("Medium-risk merchant")
+        elif row["merchant_risk_score"] == 0:
+            reasons.append("Unknown merchant risk")
+
+        if row["country_mismatch"] == 1:
+            reasons.append("Country mismatch")
+
+        if row["is_reversed"] == 1:
+            reasons.append("Reversed transaction")
+
+        if row["is_suspended_account"] == 1:
+            reasons.append("Suspended account")
+
+        if row["is_closed_account"] == 1:
+            reasons.append("Closed account")
+
+        if row["is_weekend"] == 1:
+            reasons.append("Weekend transaction")
+
+        if row["is_night"] == 1:
+            reasons.append("Night transaction")
+
+        return "; ".join(reasons) if reasons else "No significant risk indicators"
+    
+def generate_risk_reasons(df):
+    df = df.copy()
+    df["risk_reasons"] = df.apply(get_reasons,axis =1 )
+    return df
+
 def calculate_risk_score(df):
     df = df.copy()
     
     df = calculate_base_score(df)
     df = calculate_interaction_score(df)
     df = assign_risk_level(df)
+    df = generate_risk_reasons(df)
     return df
 
