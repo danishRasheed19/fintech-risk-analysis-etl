@@ -92,6 +92,12 @@ GET_CRITICAL_RISK_CUSTOMERS = """
     WHERE customer_risk_level = 'CRITICAL';
 """
 
+GET_TRANSACTION_RISK_DISTRIBUTION = """SELECT risk_level, COUNT(*) FROM risk.risk_transaction GROUP BY risk_level;"""
+
+GET_ACCOUNT_RISK_DISTRIBUTION = """SELECT account_risk_level, COUNT(*) FROM risk.risk_account GROUP BY account_risk_level; """
+
+GET_CUSTOMER_RISK_DISTRIBUTION = """SELECT customer_risk_level, COUNT(*) FROM risk.risk_customer GROUP BY customer_risk_level;"""
+
 def fetch_transaction_risk_data():
     connection = get_connection()
     try:
@@ -153,4 +159,20 @@ def fetch_overview_data():
         raise
     finally:
         cursor.close()
+        connection.close()
+
+def fetch_risk_distributions():
+    connection = get_connection()
+    try:
+        transaction_distribution = pd.read_sql(GET_TRANSACTION_RISK_DISTRIBUTION,connection)
+        account_distribution = pd.read_sql(GET_ACCOUNT_RISK_DISTRIBUTION,connection)
+        customer_distribution = pd.read_sql(GET_CUSTOMER_RISK_DISTRIBUTION,connection)
+        return {
+            "transaction_distribution" : transaction_distribution,
+            "account_distribution" : account_distribution,
+            "customer_distribution" : customer_distribution
+        }
+    except psycopg2.Error as e:
+        print(f"Error while fetching risk distributions: {e}")
+    finally:
         connection.close()
