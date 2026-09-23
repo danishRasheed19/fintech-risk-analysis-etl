@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 
 def build_account_profiles(df):
+    print("BUILDING ACCOUNT PROFILES")
     account_profiles = (
         df.groupby("account_id")
         .agg(
@@ -78,6 +79,7 @@ def assign_account_risk_profile(df):
     return df
 
 def build_customer_profiles(account_profiles,df):
+    print("BUILDING CUSTOMER PROFILES")
     account_customers = (df [["customer_id","account_id"]].drop_duplicates())
     
     customer_profiles = (

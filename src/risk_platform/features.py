@@ -50,6 +50,7 @@ def add_time_features(df):
     return df
 
 def build_transaction_features(df):
+    print("BUILDING transaction features")
     df = df.copy()
     df = merchant_risk(df)
     df = country_mismatch(df)

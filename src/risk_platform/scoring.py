@@ -116,6 +116,7 @@ def generate_risk_reasons(df):
     return df
 
 def calculate_risk_score(df):
+    print("CALCULATING RISK SCORES FOR TRANSACTIONS")
     df = df.copy()
     
     df = calculate_base_score(df)
