@@ -11,6 +11,7 @@ def main():
     transaction_df = calculate_risk_score(transaction_df)
     account_profiles = build_account_profiles(transaction_df)
     customer_profiles = build_customer_profiles(account_profiles,transaction_df)
+    print(customer_profiles[customer_profiles["customer_risk_level"] == "CRITICAL"].head())
 
 if __name__ == "__main__":
     main()

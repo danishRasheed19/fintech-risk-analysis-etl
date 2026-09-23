@@ -100,4 +100,61 @@ def build_customer_profiles(account_profiles,df):
         ).reset_index()
     )
     customer_profiles ["risky_account_ratio"] = (customer_profiles["critical_accounts"] + customer_profiles["high_risk_accounts"]) / customer_profiles["account_count"]
+    customer_profiles = assign_customer_risk_profile(customer_profiles)
     return customer_profiles
+
+def assign_customer_risk_profile(df):
+
+    df = df.copy()
+
+    conditions = [
+        (
+            (df["critical_accounts"] >= 2) |
+            (
+                (df["risky_account_ratio"] >= 0.75) &
+                (df["account_count"] >= 2)
+            ) |
+            (
+                (df["average_account_risk"] >= 15) &
+                (df["account_count"] >= 2)
+            )
+        ),
+
+        (
+            (df["critical_accounts"] >= 1) |
+            (
+                (df["risky_account_ratio"] >= 0.50) &
+                (df["account_count"] >= 2)
+            ) |
+            (
+                (df["average_account_risk"] >= 10) &
+                (df["account_count"] >= 2)
+            )
+        ),
+
+        (
+            (df["high_risk_accounts"] >= 1) |
+            (
+                (df["risky_account_ratio"] >= 0.25) &
+                (df["account_count"] >= 2)
+            ) |
+            (
+                (df["average_account_risk"] >= 6) &
+                (df["account_count"] >= 2)
+            )
+        )
+    ]
+
+    choices = [
+        "CRITICAL",
+        "HIGH",
+        "MEDIUM"
+    ]
+
+    df["customer_risk_level"] = np.select(
+        conditions,
+        choices,
+        default="LOW"
+    )
+
+    return df
