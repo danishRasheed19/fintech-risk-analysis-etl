@@ -5,6 +5,14 @@ CREATE TABLE IF NOT EXISTS risk.risk_transaction (
     transaction_id VARCHAR(50) PRIMARY KEY,
     account_id VARCHAR(50) NOT NULL,
     customer_id VARCHAR(50) NOT NULL,
+	amount INTEGER NOT NULL,
+    merchant_risk_score INTEGER NOT NULL,
+    country_mismatch INTEGER NOT NULL,
+    is_reversed INTEGER NOT NULL,
+    is_suspended_account INTEGER NOT NULL,
+    is_closed_account INTEGER NOT NULL,
+    is_weekend INTEGER NOT NULL,
+    is_night INTEGER NOT NULL,
 
     risk_score INTEGER NOT NULL,
     risk_level VARCHAR(20) NOT NULL,
@@ -57,3 +65,17 @@ CREATE TABLE IF NOT EXISTS risk.risk_customer (
 );
 
 select * from risk.risk_customer;
+select * from risk.risk_account;
+select * from risk.risk_transaction;
+
+delete from risk.risk_customer;
+delete from risk.risk_account;
+delete  from risk.risk_transaction;
+
+
+SELECT risk_level, COUNT(*)
+FROM risk.risk_transaction
+GROUP BY risk_level
+ORDER BY risk_level;
+
+

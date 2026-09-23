@@ -56,6 +56,7 @@ def upsert_risk_transactions(cursor, df):
             transaction_id,
             account_id,
             customer_id,
+            amount,
             merchant_risk_score,
             country_mismatch,
             is_reversed,
@@ -75,6 +76,7 @@ def upsert_risk_transactions(cursor, df):
         DO UPDATE SET
             account_id = EXCLUDED.account_id,
             customer_id = EXCLUDED.customer_id,
+            amount = EXCLUDED.amount,
             merchant_risk_score = EXCLUDED.merchant_risk_score,
             country_mismatch = EXCLUDED.country_mismatch,
             is_reversed = EXCLUDED.is_reversed,
@@ -94,6 +96,7 @@ def upsert_risk_transactions(cursor, df):
             "transaction_id",
             "account_id",
             "customer_id",
+            "amount",
             "merchant_risk_score",
             "country_mismatch",
             "is_reversed",
