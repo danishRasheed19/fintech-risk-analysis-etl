@@ -1,11 +1,12 @@
 import pandas as pd
 import numpy as np
-from src.risk_platform.queries import fetch_overview_data,fetch_risk_distributions
+from src.risk_platform.queries import fetch_overview_data,fetch_risk_distributions,fetch_transaction_analysis
 
 def perform_analytics():
     overview_data = get_risk_overview()
     risk_distribution = get_risk_distribution()
-    print(risk_distribution["customer_distribution"]["count"])
+    transation_analysis = get_transaction_analysis()
+    print(transation_analysis)
 
 def get_risk_overview():
     overview_data = fetch_overview_data()
@@ -13,6 +14,9 @@ def get_risk_overview():
 
 def get_risk_distribution():
     return fetch_risk_distributions()
+
+def get_transaction_analysis():
+    return fetch_transaction_analysis()
 
 def main():
     perform_analytics()
