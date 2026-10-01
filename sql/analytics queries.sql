@@ -155,3 +155,114 @@ ORDER BY
         WHEN 'Evening' THEN 4
     END;
 
+
+----------------- Account Analysis -----------------------------------------
+
+--------------- Get riskiest accounts by critical transactions ------------------------------
+
+SELECT
+    account_id,
+    account_risk_level,
+    average_risk_score,
+    max_risk_score,
+    risk_transaction_ratio,
+    high_risk_count,
+    critical_risk_count,
+    transaction_count,
+    total_transaction_amount
+FROM risk.risk_account
+ORDER BY
+    CASE account_risk_level
+        WHEN 'CRITICAL' THEN 1
+        WHEN 'HIGH' THEN 2
+        WHEN 'MEDIUM' THEN 3
+        WHEN 'LOW' THEN 4
+    END,
+    critical_risk_count DESC,
+    average_risk_score DESC,
+    risk_transaction_ratio DESC
+LIMIT 10;
+
+
+-------------- Risky Accounts with highest total amount ---------------------------------
+SELECT
+    account_id,
+    transaction_count,
+    total_transaction_amount,
+    average_risk_score,
+    risk_transaction_ratio,
+    account_risk_level,
+	critical_risk_count,
+	high_risk_count
+FROM risk.risk_account
+WHERE account_risk_level IN ('HIGH', 'CRITICAL')
+ORDER BY total_transaction_amount DESC
+LIMIT 10;
+
+------------------ CUSTOMER ANALYSIS -------------------------
+
+------------- Riskiest Customers by critical accounts ----------------------
+
+SELECT
+    customer_id,
+    customer_risk_level,
+    account_count,
+    transaction_count,
+    total_transaction_amount,
+    average_account_risk,
+    max_account_risk_score,
+    critical_accounts,
+    high_risk_accounts,
+    risky_account_ratio
+FROM risk.risk_customer
+ORDER BY
+    CASE customer_risk_level
+        WHEN 'CRITICAL' THEN 1
+        WHEN 'HIGH' THEN 2
+        WHEN 'MEDIUM' THEN 3
+        WHEN 'LOW' THEN 4
+    END,
+    critical_accounts DESC,
+    average_account_risk DESC,
+    risky_account_ratio DESC
+LIMIT 10;
+
+-------------------- Get Risky customers by transaction amount --------------------------
+
+SELECT
+    customer_id,
+    customer_risk_level,
+    account_count,
+    transaction_count,
+    total_transaction_amount,
+    average_account_risk,
+    critical_accounts,
+    high_risk_accounts
+FROM risk.risk_customer
+WHERE customer_risk_level IN ('HIGH', 'CRITICAL')
+ORDER BY total_transaction_amount DESC
+LIMIT 10;
+
+------------ Risky Customer by account count -----------------------
+
+SELECT
+    customer_id,
+    account_count,
+    customer_risk_level,
+    critical_accounts,
+    high_risk_accounts,
+    risky_account_ratio,
+    average_account_risk,
+    max_account_risk_score,
+    total_transaction_amount
+FROM risk.risk_customer
+WHERE account_count > 1
+  AND customer_risk_level IN ('HIGH', 'CRITICAL')
+ORDER BY
+    CASE customer_risk_level
+        WHEN 'CRITICAL' THEN 1
+        WHEN 'HIGH' THEN 2
+    END,
+    critical_accounts DESC,
+    risky_account_ratio DESC
+LIMIT 10;

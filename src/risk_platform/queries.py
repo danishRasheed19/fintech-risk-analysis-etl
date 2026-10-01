@@ -211,6 +211,111 @@ ORDER BY
     END;
 """
 
+GET_RISKIEST_ACCOUNTS = """
+SELECT
+    account_id,
+    account_risk_level,
+    average_risk_score,
+    max_risk_score,
+    risk_transaction_ratio,
+    high_risk_count,
+    critical_risk_count,
+    transaction_count,
+    total_transaction_amount
+FROM risk.risk_account
+ORDER BY
+    CASE account_risk_level
+        WHEN 'CRITICAL' THEN 1
+        WHEN 'HIGH' THEN 2
+        WHEN 'MEDIUM' THEN 3
+        WHEN 'LOW' THEN 4
+    END,
+    critical_risk_count DESC,
+    average_risk_score DESC,
+    risk_transaction_ratio DESC
+LIMIT 10;
+"""
+
+GET_RISKY_ACCOUNTS_ACCORDING_TO_TRANSACTION_VOLUME = """
+SELECT
+    account_id,
+    transaction_count,
+    total_transaction_amount,
+    average_risk_score,
+    risk_transaction_ratio,
+    account_risk_level,
+	critical_risk_count,
+	high_risk_count
+FROM risk.risk_account
+WHERE account_risk_level IN ('HIGH', 'CRITICAL')
+ORDER BY total_transaction_amount DESC
+LIMIT 10;
+"""
+
+GET_RISKIEST_CUSTOMERS = """
+SELECT
+    customer_id,
+    account_count,
+    customer_risk_level,
+    critical_accounts,
+    high_risk_accounts,
+    risky_account_ratio,
+    average_account_risk,
+    max_account_risk_score,
+    total_transaction_amount
+FROM risk.risk_customer
+WHERE account_count > 1
+  AND customer_risk_level IN ('HIGH', 'CRITICAL')
+ORDER BY
+    CASE customer_risk_level
+        WHEN 'CRITICAL' THEN 1
+        WHEN 'HIGH' THEN 2
+    END,
+    critical_accounts DESC,
+    risky_account_ratio DESC
+LIMIT 10;
+"""
+
+GET_RISKY_CUSTOMER_BY_AMOUNT = """
+SELECT
+    customer_id,
+    customer_risk_level,
+    account_count,
+    transaction_count,
+    total_transaction_amount,
+    average_account_risk,
+    critical_accounts,
+    high_risk_accounts
+FROM risk.risk_customer
+WHERE customer_risk_level IN ('HIGH', 'CRITICAL')
+ORDER BY total_transaction_amount DESC
+LIMIT 10;
+"""
+GET_RISKY_CUSTOMER_BY_CRITICAL_COUNT = """
+SELECT
+    customer_id,
+    customer_risk_level,
+    account_count,
+    transaction_count,
+    total_transaction_amount,
+    average_account_risk,
+    max_account_risk_score,
+    critical_accounts,
+    high_risk_accounts,
+    risky_account_ratio
+FROM risk.risk_customer
+ORDER BY
+    CASE customer_risk_level
+        WHEN 'CRITICAL' THEN 1
+        WHEN 'HIGH' THEN 2
+        WHEN 'MEDIUM' THEN 3
+        WHEN 'LOW' THEN 4
+    END,
+    critical_accounts DESC,
+    average_account_risk DESC,
+    risky_account_ratio DESC
+LIMIT 10;
+"""
 
 
 def fetch_transaction_risk_data():
@@ -308,7 +413,31 @@ def fetch_transaction_analysis():
             "risk_by_time" : risk_by_time
         }
     except psycopg2.Error as e:
-        print(f"Error while fetching risk distributions: {e}")
+        print(f"Error while fetching transaction analysis: {e}")
     finally:
         connection.close()
     
+def fetch_account_analysis():
+    connection = get_connection()
+    try:
+        return {
+            "riskiest_accounts" : pd.read_sql(GET_RISKIEST_ACCOUNTS,connection),
+            "riskiest_accounts_by_amount" : pd.read_sql(GET_RISKY_ACCOUNTS_ACCORDING_TO_TRANSACTION_VOLUME,connection)
+        }
+    except psycopg2.Error as e:
+        print(f"Error while fetching account analysis: {e}")
+    finally:
+        connection.close()
+        
+def fetch_customer_analysis():
+    connection = get_connection()
+    try:
+        return {
+            "riskiest_customers" : pd.read_sql(GET_RISKIEST_CUSTOMERS,connection),
+            "risky_customer_by_amount" : pd.read_sql(GET_RISKY_CUSTOMER_BY_AMOUNT,connection),
+            "risky_customer_by_critical_count" : pd.read_sql(GET_RISKY_CUSTOMER_BY_CRITICAL_COUNT,connection)
+        }
+    except psycopg2.Error as e:
+        print(f"Error while fetching customer analysis:{e}")
+    finally:
+        connection.close()
