@@ -43,18 +43,29 @@ def get_risk_overview():
     return overview_data
 
 def get_risk_distribution():
-    return fetch_risk_distributions()
+    risk_distributions = fetch_risk_distributions()
+    return {
+            key: value.to_dict(orient="records")
+            for key, value in risk_distributions.items()
+    }
 
 def get_transaction_analysis():
-    return fetch_transaction_analysis()
+    transaction_analysis = fetch_transaction_analysis()
+    return {
+        key: value.to_dict(orient="records")
+        for key, value in transaction_analysis.items()
+    }
 
 def get_account_analysis():
-    return fetch_account_analysis()
+    account_analysis = fetch_account_analysis()
+    return {
+       key: value.to_dict(orient="records")
+        for key, value in account_analysis.items() 
+    }
 
 def get_customer_analysis():
-    return fetch_customer_analysis()
-def main():
-    get_risk_analytics()
-
-if __name__ == "__main__":
-    main()
+    customer_analysis = fetch_customer_analysis()
+    return {
+        key : value.to_dict(orient = "records")
+        for key,value in customer_analysis.items()
+    }
