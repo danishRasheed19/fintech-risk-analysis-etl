@@ -1,7 +1,9 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { useState, type ReactNode } from "react";
+import { useState,useEffect } from "react";
+import { useTheme } from "next-themes";
+import { Sun, Moon } from "lucide-react";
 import {
   Activity,
   AlertTriangle,
@@ -28,6 +30,8 @@ import { fetchDashboard } from "@/lib/risk-api";
 type Row = Record<string, unknown>;
 type RiskLevel = "low" | "medium" | "high" | "critical";
 type EntityTab = "customers" | "accounts";
+type CustomerView = "riskiest" | "amount" | "critical";
+type AccountView = "risk" | "amount";
 
 const levelColor: Record<RiskLevel, string> = {
   low: "var(--risk-low)",
@@ -152,8 +156,18 @@ export default function Dashboard() {
     queryKey: ["risk-dashboard"],
     queryFn: fetchDashboard,
   });
+  
+const { theme, setTheme } = useTheme()
+const [mounted, setMounted] = useState(false)
+
+useEffect(() => {
+  setMounted(true)
+}, [])
+
 
   const [entityTab, setEntityTab] = useState<EntityTab>("customers");
+  const [customerView, setCustomerView] = useState<CustomerView>("riskiest");
+  const [accountView, setAccountView] = useState<AccountView>("risk");
 
   if (isLoading) {
     return (
@@ -211,17 +225,37 @@ export default function Dashboard() {
     ),
   }));
 
-  // Use the intended array for each API response.
-  const customerRows = asRows(
-    get(customerResponse, "riskiest_customers"),
-  );
+  // Each control selects a specific list returned by the corresponding API.
+  const customerViews: { value: CustomerView; label: string }[] = [
+    { value: "riskiest", label: "Highest average risk" },
+    { value: "amount", label: "Highest transaction amount" },
+    { value: "critical", label: "Most critical accounts" },
+  ];
 
-  const accountRows = asRows(
-    get(accountResponse, "riskiest_accounts", "riskiest_accounts_by_amount"),
-  );
+  const accountViews: { value: AccountView; label: string }[] = [
+    { value: "risk", label: "Highest average risk" },
+    { value: "amount", label: "Highest transaction amount" },
+  ];
 
-  const entities =
-    entityTab === "customers" ? customerRows : accountRows;
+  const entities = entityTab === "customers"
+    ? asRows(get(
+        customerResponse,
+        customerView === "riskiest"
+          ? "riskiest_customers"
+          : customerView === "amount"
+            ? "risky_customer_by_amount"
+            : "risky_customer_by_critical_count",
+      ))
+    : asRows(get(
+        accountResponse,
+        accountView === "risk"
+          ? "riskiest_accounts"
+          : "riskiest_accounts_by_amount",
+      ));
+
+  const selectedViewLabel = entityTab === "customers"
+    ? customerViews.find((view) => view.value === customerView)?.label
+    : accountViews.find((view) => view.value === accountView)?.label;
 
   // Overview KPIs
   const kpis = [
@@ -290,9 +324,27 @@ export default function Dashboard() {
             </p>
           </div>
         </div>
-
         <span className="rounded border px-2 py-1 font-mono text-xs text-risk-low">
-          ● LIVE API
+          <button
+  type="button"
+  onClick={() =>
+    setTheme(theme === "dark" ? "light" : "dark")
+  }
+  disabled={!mounted}
+  className="inline-flex items-center gap-2 rounded-md border px-3 py-2 text-sm hover:bg-accent"
+>
+  {mounted && theme === "dark" ? (
+    <>
+      <Sun className="h-4 w-4" />
+      Light mode
+    </>
+  ) : (
+    <>
+      <Moon className="h-4 w-4" />
+      Dark mode
+    </>
+  )}
+</button>
         </span>
       </header>
 
@@ -393,26 +445,64 @@ export default function Dashboard() {
       </div>
 
       {/* Customer/account risk table */}
-      <Panel title="Highest-risk customers and accounts">
-        <div className="mb-3 flex gap-1 rounded-md bg-muted p-1">
-          {(["customers", "accounts"] as const).map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setEntityTab(tab)}
-              className={`flex-1 rounded px-3 py-2 text-xs capitalize transition-colors ${
-                entityTab === tab
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              {tab}
-            </button>
-          ))}
+      <Panel title="Customer and account risk explorer">
+        <div className="mb-4 flex flex-col gap-3">
+          <div className="flex gap-1 rounded-md bg-muted p-1">
+            {(["customers", "accounts"] as const).map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setEntityTab(tab)}
+                className={`flex-1 rounded px-3 py-2 text-xs capitalize transition-colors ${
+                  entityTab === tab
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+                aria-pressed={entityTab === tab}
+              >
+                {tab}
+              </button>
+            ))}
+          </div>
+
+          <div>
+            <p className="mb-2 text-xs text-muted-foreground">View by</p>
+            <div className="flex flex-wrap gap-2">
+              {(entityTab === "customers" ? customerViews : accountViews).map((view) => {
+                const active = entityTab === "customers"
+                  ? customerView === view.value
+                  : accountView === view.value;
+
+                return (
+                  <button
+                    key={view.value}
+                    onClick={() => {
+                      if (entityTab === "customers") {
+                        setCustomerView(view.value as CustomerView);
+                      } else {
+                        setAccountView(view.value as AccountView);
+                      }
+                    }}
+                    className={`rounded-md border px-3 py-2 text-xs transition-colors ${
+                      active
+                        ? "border-primary bg-primary/10 text-foreground"
+                        : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                    }`}
+                    aria-pressed={active}
+                  >
+                    {view.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Showing {selectedViewLabel?.toLowerCase()} · top {entities.length} records returned by the API
+          </p>
         </div>
 
         {entities.length === 0 ? (
           <p className="py-8 text-center text-sm text-muted-foreground">
-            No {entityTab} risk records returned by the API.
+            No records returned for this {entityTab === "customers" ? "customer" : "account"} view.
           </p>
         ) : (
           <div className="overflow-x-auto">
@@ -423,11 +513,8 @@ export default function Dashboard() {
                   <th className="pb-2 pr-4">Average risk</th>
                   <th className="pb-2 pr-4">Max risk</th>
                   <th className="pb-2 pr-4">Risk level</th>
-                  <th className="pb-2 pr-4 text-right">
-                    {entityTab === "customers"
-                      ? "Accounts"
-                      : "Transactions"}
-                  </th>
+                  <th className="pb-2 pr-4 text-right">Accounts</th>
+                  <th className="pb-2 pr-4 text-right">Transactions</th>
                   <th className="pb-2 pr-4 text-right">Critical</th>
                   <th className="pb-2 pr-4 text-right">High risk</th>
                   <th className="pb-2 pr-4 text-right">Risk ratio</th>
@@ -437,100 +524,74 @@ export default function Dashboard() {
 
               <tbody>
                 {entities.slice(0, 10).map((row, index) => {
-                  /*
-                   * Customer and account responses have different schemas.
-                   * Map each one explicitly instead of guessing field names.
-                   */
                   const isCustomer = entityTab === "customers";
-
                   const id = textValue(
                     isCustomer ? row.customer_id : row.account_id,
                     `Record ${index + 1}`,
                   );
-
-                  const score = numberValue(
-                    isCustomer
-                      ? row.average_account_risk
-                      : row.average_risk_score,
-                  );
-
-                  const maxScore = numberValue(
-                    isCustomer
-                      ? row.max_account_risk_score
-                      : row.max_risk_score,
-                  );
-
+                  const averageRisk = isCustomer
+                    ? row.average_account_risk
+                    : row.average_risk_score;
+                  const maxRisk = isCustomer
+                    ? row.max_account_risk_score
+                    : row.max_risk_score;
                   const level = normaliseLevel(
-                    isCustomer
-                      ? row.customer_risk_level
-                      : row.account_risk_level,
+                    isCustomer ? row.customer_risk_level : row.account_risk_level,
                   );
+                  const accountCount = row.account_count;
+                  const transactionCount = row.transaction_count;
+                  const criticalCount = isCustomer
+                    ? row.critical_accounts
+                    : row.critical_risk_count;
+                  const highRiskCount = isCustomer
+                    ? row.high_risk_accounts
+                    : row.high_risk_count;
+                  const riskRatio = isCustomer
+                    ? row.risky_account_ratio
+                    : row.risk_transaction_ratio;
+                  const amount = row.total_transaction_amount;
 
-                  const count = numberValue(
-                    isCustomer ? row.account_count : row.transaction_count,
-                  );
-
-                  const criticalCount = numberValue(
-                    isCustomer
-                      ? row.critical_accounts
-                      : row.critical_risk_count,
-                  );
-
-                  const highRiskCount = numberValue(
-                    isCustomer
-                      ? row.high_risk_accounts
-                      : row.high_risk_count,
-                  );
-
-                  const riskRatio = numberValue(
-                    isCustomer
-                      ? row.risky_account_ratio
-                      : row.risk_transaction_ratio,
-                  );
-
-                  const amount = numberValue(
-                    row.total_transaction_amount,
-                  );
+                  const displayMetric = (value: unknown, decimals = 0) =>
+                    value === null || value === undefined || value === ""
+                      ? "—"
+                      : decimals > 0
+                        ? numberValue(value).toFixed(decimals)
+                        : fmt(value);
 
                   return (
                     <tr
                       key={`${id}-${index}`}
                       className="border-t hover:bg-accent/40"
                     >
-                      <td className="py-3 pr-4 font-mono text-xs">
-                        {id}
-                      </td>
-
+                      <td className="py-3 pr-4 font-mono text-xs">{id}</td>
                       <td className="py-3 pr-4 font-mono tabular-nums">
-                        {score.toFixed(2)}
+                        {displayMetric(averageRisk, 2)}
                       </td>
-
                       <td className="py-3 pr-4 font-mono tabular-nums">
-                        {fmt(maxScore)}
+                        {displayMetric(maxRisk)}
                       </td>
-
-                      <td className="py-3 pr-4">
-                        <LevelBadge level={level} />
-                      </td>
-
+                      <td className="py-3 pr-4"><LevelBadge level={level} /></td>
                       <td className="py-3 pr-4 text-right font-mono tabular-nums">
-                        {fmt(count)}
+                        {displayMetric(accountCount)}
                       </td>
-
                       <td className="py-3 pr-4 text-right font-mono tabular-nums">
-                        {fmt(criticalCount)}
+                        {displayMetric(transactionCount)}
                       </td>
-
                       <td className="py-3 pr-4 text-right font-mono tabular-nums">
-                        {fmt(highRiskCount)}
+                        {displayMetric(criticalCount)}
                       </td>
-
                       <td className="py-3 pr-4 text-right font-mono tabular-nums">
-                        {(riskRatio * 100).toFixed(1)}%
+                        {displayMetric(highRiskCount)}
                       </td>
-
+                      <td className="py-3 pr-4 text-right font-mono tabular-nums">
+                        {riskRatio === null || riskRatio === undefined || riskRatio === ""
+                          ? "—"
+                          : `${(numberValue(riskRatio) * 100).toFixed(1)}%`}
+                      </td>
                       <td className="py-3 text-right font-mono tabular-nums">
-                        {money(amount)}
+                        {amount === null || amount === undefined || amount === ""
+                          ? "—"
+                          : money(amount)}
                       </td>
                     </tr>
                   );
