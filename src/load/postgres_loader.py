@@ -1,20 +1,25 @@
+import os
+from dotenv import load_dotenv
 import psycopg2
 from psycopg2 import sql
 from psycopg2.extras import execute_values
 import pandas as pd
+
+load_dotenv()
+
 def get_connection():
     try:
         connection = psycopg2.connect(
-            host = 'localhost',
-            port = 5432,
-            database = "Staging_risk",
-            user = 'postgres',
-            password = 'osaka@19'
+            host=os.getenv("DB_HOST", "localhost"),
+            port=int(os.getenv("DB_PORT", "5432")),
+            database=os.getenv("DB_NAME", "Staging_risk"),
+            user=os.getenv("DB_USER", "postgres"),
+            password=os.getenv("DB_PASSWORD"),
         )
-        
+
         print("POSTGRES CONNECTION SUCCESSFUL")
-        
         return connection
+
     except psycopg2.Error as e:
         print(f"POSTGRESQL CONNECTION ERROR: {e}")
         raise
